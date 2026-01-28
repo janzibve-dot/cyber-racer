@@ -1,4 +1,3 @@
-
 const UI = {
     // Словарь переводов
     lang: 'en',
@@ -10,7 +9,7 @@ const UI = {
             credits: "BUILD v0.1 | SYSTEM READY"
         },
         ru: {
-            title: "КИБЕР ГОНКИ",
+            title: "CYBER RACER", // Название игры часто оставляют на английском для стиля
             start: "НАЧАТЬ ГОНКУ",
             langBtn: "ЯЗЫК: RU",
             credits: "ВЕРСИЯ v0.1 | СИСТЕМА ГОТОВА"
@@ -23,13 +22,49 @@ const UI = {
         startBtn: document.getElementById('btn-start'),
         langBtn: document.getElementById('btn-lang'),
         credits: document.querySelector('.credits'),
-        menu: document.getElementById('main-menu')
+        menu: document.getElementById('main-menu'),
+        buttons: document.querySelectorAll('.cyber-btn') // Выбираем все кнопки сразу
+    },
+
+    // Звуковые эффекты
+    sounds: {
+        hover: new Audio('assets/sounds/hover.mp3'),
+        click: new Audio('assets/sounds/click.mp3')
     },
 
     init: function() {
-        // Навешиваем события
-        this.elements.startBtn.addEventListener('click', () => this.startGame());
-        this.elements.langBtn.addEventListener('click', () => this.toggleLang());
+        // Настройка громкости (чтобы не оглушить игрока)
+        this.sounds.hover.volume = 0.3; 
+        this.sounds.click.volume = 0.5;
+
+        // Навешиваем события клика
+        this.elements.startBtn.addEventListener('click', () => {
+            this.playSound('click');
+            // Небольшая задержка перед стартом, чтобы звук успел проиграться
+            setTimeout(() => this.startGame(), 500);
+        });
+
+        this.elements.langBtn.addEventListener('click', () => {
+            this.playSound('click');
+            this.toggleLang();
+        });
+
+        // Навешиваем события наведения (hover) на ВСЕ кнопки
+        this.elements.buttons.forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                this.playSound('hover');
+            });
+        });
+    },
+
+    playSound: function(soundName) {
+        // Сбрасываем время звука на 0, чтобы при быстром наведении он играл заново
+        const sound = this.sounds[soundName];
+        sound.currentTime = 0;
+        sound.play().catch(error => {
+            // Браузеры иногда блокируют звук, если пользователь еще ничего не нажал
+            console.warn("Audio play blocked by browser policy until interaction:", error);
+        });
     },
 
     toggleLang: function() {
@@ -46,10 +81,8 @@ const UI = {
     },
 
     startGame: function() {
-        // Скрываем меню
         this.elements.menu.classList.add('hidden');
         console.log("Game State: Started");
-        // Запускаем инициализацию игры из main.js
         if (window.GameApp && window.GameApp.init) {
             window.GameApp.init();
         }
