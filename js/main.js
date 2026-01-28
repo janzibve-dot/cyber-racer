@@ -1,8 +1,9 @@
+// js/main.js
 import { World } from './game/World.js';
 
-// Система дождя (оставляем для меню)
 const RainSystem = {
     container: document.getElementById('rain-container'),
+    
     init: function() {
         for(let i=0; i<80; i++) {
             let drop = document.createElement('div');
@@ -13,36 +14,33 @@ const RainSystem = {
             this.container.appendChild(drop);
         }
     },
-    stop: function() {
-        this.container.style.display = 'none'; // Скрываем дождь при старте игры
+
+    // ОПТИМИЗАЦИЯ: Полное удаление элементов
+    destroy: function() {
+        this.container.innerHTML = ''; // Удаляем DOM узлы
+        this.container.style.display = 'none';
     }
 };
 
-// Глобальный класс приложения
 class GameApp {
     constructor() {
         this.world = null;
         this.active = false;
     }
 
-    // Этот метод вызывается из ui.js
     init() {
-        console.log("Game Start Initialized");
         if (this.active) return;
         this.active = true;
 
-        // 1. Останавливаем эффекты меню
-        RainSystem.stop();
+        console.log("System: Cleaning Memory...");
+        RainSystem.destroy(); // Чистим память
 
-        // 2. Инициализируем 3D мир
-        // Передаем ID div-а, в котором будет игра
+        console.log("System: Starting World...");
         this.world = new World('game-container');
     }
 }
 
-// Запуск при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     RainSystem.init();
-    // Делаем доступным глобально, чтобы ui.js мог его вызвать
     window.GameApp = new GameApp();
 });
