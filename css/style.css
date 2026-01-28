@@ -7,9 +7,9 @@
     --text-color: #ffffff;
 }
 
-/* --- ПОДКЛЮЧЕНИЕ ВАШЕГО ШРИФТА --- */
+/* --- ПОДКЛЮЧЕНИЕ ШРИФТА --- */
 @font-face {
-    font-family: 'CyberpunkTitle'; /* Придумываем имя для CSS */
+    font-family: 'CyberpunkTitle';
     src: url('../assets/fonts/Cyberpunk.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
@@ -19,30 +19,24 @@ body {
     margin: 0;
     overflow: hidden;
     background-color: #000;
-    /* Для всего тела оставляем читаемый Orbitron */
     font-family: 'Orbitron', sans-serif;
     color: var(--text-color);
 }
 
-/* --- ФОН (Вернули как было) --- */
+/* --- ФОН --- */
 .bg-overlay {
     position: fixed;
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%;
+    top: 0; left: 0; width: 100%; height: 100%;
     z-index: -1;
-    
-    /* Вернули позицию center center (без смещения вниз) */
-    background: linear-gradient(rgba(10, 5, 20, 0.6), rgba(10, 5, 20, 0.6)), url('../assets/images/bg.webp') no-repeat center center;
+    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('../assets/images/bg.webp') no-repeat center center;
     background-size: cover;
 }
 
-/* --- КОДОВЫЙ ДОЖДЬ (Оставляем видимым) --- */
+/* --- ДОЖДЬ (ТЕПЕРЬ ХОРОШО ВИДЕН) --- */
 #rain-container {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 1; 
+    z-index: 5; /* Подняли слой выше фона */
     pointer-events: none; 
 }
 
@@ -50,9 +44,10 @@ body {
     position: absolute;
     bottom: 100%; 
     width: 3px; 
-    height: 60px; 
-    background: linear-gradient(to bottom, transparent, #00f3ff); 
-    box-shadow: 0 0 10px rgba(0, 243, 255, 0.5); 
+    height: 80px; /* Еще длиннее */
+    /* Ярко-белый центр с голубым краем для контраста */
+    background: linear-gradient(to bottom, transparent, #ffffff); 
+    box-shadow: 0 0 8px #00f3ff; 
     animation: rainFall linear infinite;
 }
 
@@ -69,15 +64,23 @@ body {
 }
 
 .game-title {
-    /* ПРИМЕНЯЕМ ВАШ НОВЫЙ ШРИФТ ТОЛЬКО К ЗАГОЛОВКУ */
     font-family: 'CyberpunkTitle', 'Orbitron', sans-serif;
     
-    font-size: 4rem; 
+    /* --- ГЕОМЕТРИЯ (Твои размеры) --- */
+    font-size: 7rem; /* Увеличили высоту текста */
+    letter-spacing: 35px; /* Растянули длину (+12см визуально) */
+    
+    /* Подняли на 3см (115px) вверх */
+    /* scaleY(1.3) дополнительно вытягивает буквы вверх (+2.5см визуально) */
+    transform: translateY(-115px) scaleY(1.3);
+    
     color: var(--neon-cyan); 
-    text-shadow: 0 0 20px var(--neon-cyan);
-    margin-bottom: 20px; 
-    letter-spacing: 5px; 
+    text-shadow: 0 0 25px var(--neon-cyan), 0 0 10px white; /* Усилили свечение */
+    margin-bottom: 40px; 
     text-transform: uppercase;
+    
+    /* Компенсация отступа справа из-за letter-spacing, чтобы текст был по центру */
+    margin-right: -35px; 
 }
 
 /* --- ОСТАЛЬНЫЕ СТИЛИ (Без изменений) --- */
