@@ -21,9 +21,9 @@ export class World {
     initScene() {
         // 1. Сцена
         this.scene = new THREE.Scene();
-        // Используем цвет из конфига. Если экран черный - значит конфиг обновился!
         this.scene.background = new THREE.Color(CONFIG.colors.sky);
-        this.scene.fog = new THREE.Fog(CONFIG.colors.fog, 50, 200);
+        // Туман подальше, чтобы видеть дорогу впереди
+        this.scene.fog = new THREE.Fog(CONFIG.colors.fog, 100, 400);
 
         // 2. Рендер
         this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -31,7 +31,7 @@ export class World {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.container.appendChild(this.renderer.domElement);
 
-        // 3. КАМЕРА (ИСПРАВЛЕНА ПОЗИЦИЯ)
+        // 3. ОРТОГОНАЛЬНАЯ КАМЕРА (ВИД ПРЯМО)
         const aspect = this.width / this.height;
         const s = CONFIG.camera.viewSize;
 
@@ -41,15 +41,23 @@ export class World {
             1, 1000
         );
 
-        // Ставим камеру ровно сзади и сверху (Classic Arcade View)
-        // x=0 (центр), y=30 (высота), z=30 (дистанция)
-        this.camera.position.set(0, 30, 30); 
-        // Смотрим чуть вперед по дороге
-        this.camera.lookAt(0, 0, -20);
+        // Позиция камеры из конфига (сзади машины)
+        this.camera.position.set(
+            CONFIG.camera.position.x, 
+            CONFIG.camera.position.y, 
+            CONFIG.camera.position.z
+        );
+        
+        // ВАЖНО: Смотрим вперед вдаль (y: 5 - чуть выше земли, z: -100 - далеко вперед)
+        this.camera.lookAt(0, 5, -100);
 
         // 4. Свет
-        const ambient = new THREE.AmbientLight(0xffffff, 1.0); // Яркий общий свет
+        const ambient = new THREE.AmbientLight(0xffffff, 1.0);
         this.scene.add(ambient);
+        
+        const dirLight = new THREE.DirectionalLight(CONFIG.colors.neonCyan, 0.8);
+        dirLight.position.set(-20, 50, 20); // Свет сбоку для объема
+        this.scene.add(dirLight);
     }
 
     onResize() {
