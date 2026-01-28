@@ -9,7 +9,7 @@ const UI = {
             credits: "BUILD v0.1 | SYSTEM READY"
         },
         ru: {
-            title: "CYBER RACER", // Название игры часто оставляют на английском для стиля
+            title: "CYBER RACER",
             start: "НАЧАТЬ ГОНКУ",
             langBtn: "ЯЗЫК: RU",
             credits: "ВЕРСИЯ v0.1 | СИСТЕМА ГОТОВА"
@@ -23,7 +23,7 @@ const UI = {
         langBtn: document.getElementById('btn-lang'),
         credits: document.querySelector('.credits'),
         menu: document.getElementById('main-menu'),
-        buttons: document.querySelectorAll('.cyber-btn') // Выбираем все кнопки сразу
+        buttons: document.querySelectorAll('.cyber-btn')
     },
 
     // Звуковые эффекты
@@ -33,23 +33,25 @@ const UI = {
     },
 
     init: function() {
-        // Настройка громкости (чтобы не оглушить игрока)
-        this.sounds.hover.volume = 0.3; 
+        this.sounds.hover.volume = 0.3;
         this.sounds.click.volume = 0.5;
 
-        // Навешиваем события клика
+        // КНОПКА СТАРТ
         this.elements.startBtn.addEventListener('click', () => {
-            this.playSound('click');
-            // Небольшая задержка перед стартом, чтобы звук успел проиграться
-            setTimeout(() => this.startGame(), 500);
+            // Играем обрезанный звук двигателя
+            this.playEngineSound(); 
+            
+            // Задержка 2 секунды (ровно столько, сколько играет звук), потом старт
+            setTimeout(() => this.startGame(), 2000);
         });
 
+        // КНОПКА ЯЗЫКА (обычный клик, можно использовать звук hover или короткий клик)
         this.elements.langBtn.addEventListener('click', () => {
-            this.playSound('click');
+            this.playSound('hover'); // Для смены языка лучше легкий звук
             this.toggleLang();
         });
 
-        // Навешиваем события наведения (hover) на ВСЕ кнопки
+        // НАВЕДЕНИЕ (HOVER)
         this.elements.buttons.forEach(btn => {
             btn.addEventListener('mouseenter', () => {
                 this.playSound('hover');
@@ -57,14 +59,28 @@ const UI = {
         });
     },
 
+    // Обычная функция для коротких звуков
     playSound: function(soundName) {
-        // Сбрасываем время звука на 0, чтобы при быстром наведении он играл заново
         const sound = this.sounds[soundName];
         sound.currentTime = 0;
-        sound.play().catch(error => {
-            // Браузеры иногда блокируют звук, если пользователь еще ничего не нажал
-            console.warn("Audio play blocked by browser policy until interaction:", error);
-        });
+        sound.play().catch(e => console.warn(e));
+    },
+
+    // Специальная функция для звука двигателя (твоя просьба)
+    playEngineSound: function() {
+        const sound = this.sounds.click;
+        
+        // 1. Пропускаем первую секунду (начало)
+        sound.currentTime = 1.0; 
+        
+        // 2. Запускаем звук
+        sound.play().catch(e => console.warn(e));
+
+        // 3. Через 2 секунды останавливаем звук (удаляем остальное)
+        setTimeout(() => {
+            sound.pause();
+            sound.currentTime = 0; // Сброс
+        }, 2000); // 2000 миллисекунд = 2 секунды
     },
 
     toggleLang: function() {
@@ -89,7 +105,6 @@ const UI = {
     }
 };
 
-// Запуск UI при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     UI.init();
 });
