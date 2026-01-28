@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CyberPunk Racer 2077</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
@@ -11,27 +12,53 @@
 
     <div id="game-container"></div>
 
-    <div id="main-menu" class="menu-overlay cyber-yellow-border">
-        <h1 class="cyber-glitch" data-text="CYBER RACER">CYBER RACER</h1>
+    <div id="main-menu" class="mech-overlay">
         
-        <div class="controls-container cyber-blue-flicker">
-            <div class="control-row">
-                <span class="key-highlight">[W A S D]</span>
-                <span id="desc-move" class="control-desc">ДВИЖЕНИЕ</span>
+        <h1 class="game-title">CYBER RACER</h1>
+
+        <div class="mech-top-bar">
+            <div class="icon-box settings-icon">
+                <i class="fas fa-cog"></i>
             </div>
-            <div class="control-splitter">--- SYSTEM ---</div>
-            <div class="control-row">
-                <span class="key-highlight">[МЫШЬ]</span>
-                <span id="desc-look" class="control-desc">ОБЗОР / РУЛЬ</span>
+            <div class="icon-box sound-icon" id="btn-mute">
+                <i class="fas fa-volume-up"></i>
+            </div>
+            <div class="wire wire-left"></div>
+            <div class="wire wire-right"></div>
+        </div>
+
+        <div class="mech-screen-frame">
+            <div class="screen-inner scanlines">
+                <div class="controls-wrapper">
+                    <div class="control-group">
+                        <span class="key-bind">[W A S D]</span>
+                        <span id="desc-move" class="action-name">ДВИЖЕНИЕ</span>
+                    </div>
+                    <div class="control-divider"></div>
+                    <div class="control-group">
+                        <span class="key-bind">[MOUSE]</span>
+                        <span id="desc-look" class="action-name">ОБЗОР / РУЛЬ</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bolt bolt-tl"></div><div class="bolt bolt-tr"></div>
+            <div class="bolt bolt-bl"></div><div class="bolt bolt-br"></div>
+        </div>
+
+        <div class="mech-bottom-panel">
+            <div class="circuit-bg"></div>
+            
+            <div class="mech-buttons-row">
+                <button id="btn-start" class="mech-btn cyan-glow">
+                    <span>НАЧАТЬ ГОНКУ</span>
+                </button>
+                <button id="btn-lang" class="mech-btn cyan-glow">
+                    <span>ЯЗЫК: RU</span>
+                </button>
             </div>
         </div>
 
-        <div class="menu-buttons">
-            <button id="btn-start" class="cyber-btn">НАЧАТЬ ГОНКУ</button>
-            <button id="btn-lang" class="cyber-btn">ЯЗЫК: RU</button>
-        </div>
-
-        <div class="credits">ВЕРСИЯ v0.2 | СИСТЕМА ГОТОВА</div>
+        <div class="credits">ВЕРСИЯ v0.3 | INDUSTRIAL UI</div>
     </div>
 
     <script src="js/ui.js"></script>
