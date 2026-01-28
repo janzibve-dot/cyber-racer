@@ -1,6 +1,6 @@
 const WorldSystem = {
     rainContainer: document.getElementById('rain-container'),
-    dropCount: 150, // Больше капель для густоты
+    dropCount: 200, // Увеличили количество капель до 200
 
     init: function() {
         console.log("World System: Initializing...");
@@ -17,25 +17,24 @@ const WorldSystem = {
             const drop = document.createElement('div');
             drop.classList.add('rain-drop');
 
-            // 1. Позиция (вся ширина экрана)
+            // 1. Позиция
             drop.style.left = Math.random() * 100 + 'vw';
             
-            // 2. Скорость падения (быстрее/медленнее)
-            const duration = Math.random() * 0.5 + 0.5; // от 0.5 до 1.0 сек
+            // 2. Скорость (очень быстрая)
+            const duration = Math.random() * 0.4 + 0.4; 
             drop.style.animationDuration = duration + 's';
 
-            // 3. Задержка (чтобы падали хаотично)
+            // 3. Задержка
             drop.style.animationDelay = Math.random() * 2 + 's';
 
-            // 4. Прозрачность (делаем ярче: от 0.4 до 1.0)
-            drop.style.opacity = Math.random() * 0.6 + 0.4;
+            // 4. Прозрачность (почти непрозрачные для видимости)
+            drop.style.opacity = Math.random() * 0.5 + 0.5;
 
             this.rainContainer.appendChild(drop);
         }
     }
 };
 
-// Запуск
 document.addEventListener('DOMContentLoaded', () => {
     WorldSystem.init();
 });
