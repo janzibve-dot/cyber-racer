@@ -1,46 +1,57 @@
-// js/main.js
 import { World } from './game/World.js';
+
+console.log("Main Module Loaded");
 
 const RainSystem = {
     container: document.getElementById('rain-container'),
-    
     init: function() {
-        for(let i=0; i<80; i++) {
-            let drop = document.createElement('div');
+        if(!this.container) return;
+        this.container.innerHTML = '';
+        for(let i=0; i<50; i++) {
+            const drop = document.createElement('div');
             drop.className = 'rain-drop';
-            drop.style.left = Math.random()*100 + 'vw';
-            drop.style.animationDuration = (0.5 + Math.random()) + 's';
-            drop.style.animationDelay = Math.random()*2 + 's';
+            drop.style.left = Math.random()*100 + '%';
+            drop.style.animationDuration = (0.5+Math.random())+'s';
+            drop.style.animationDelay = Math.random()+'s';
             this.container.appendChild(drop);
         }
     },
-
-    // ОПТИМИЗАЦИЯ: Полное удаление элементов
     destroy: function() {
-        this.container.innerHTML = ''; // Удаляем DOM узлы
-        this.container.style.display = 'none';
+        if(this.container) {
+            this.container.innerHTML = '';
+            this.container.style.display = 'none';
+        }
     }
 };
 
+// Глобальный класс
 class GameApp {
     constructor() {
-        this.world = null;
         this.active = false;
+        this.world = null;
     }
 
     init() {
+        console.log("GameApp: INIT called!");
         if (this.active) return;
         this.active = true;
 
-        console.log("System: Cleaning Memory...");
-        RainSystem.destroy(); // Чистим память
+        // Удаляем дождь
+        RainSystem.destroy();
 
-        console.log("System: Starting World...");
-        this.world = new World('game-container');
+        // Запускаем мир
+        try {
+            this.world = new World('game-container');
+            console.log("World created successfully");
+        } catch (e) {
+            console.error("Error creating world:", e);
+        }
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    RainSystem.init();
-    window.GameApp = new GameApp();
-});
+// Запуск дождя в меню
+RainSystem.init();
+
+// Делаем доступным глобально
+window.GameApp = new GameApp();
+console.log("GameApp attached to window");
