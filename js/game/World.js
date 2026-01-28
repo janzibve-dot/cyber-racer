@@ -1,5 +1,7 @@
+// js/game/World.js
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 import { City } from './City.js';
+import { CONFIG } from './Config.js';
 
 export class World {
     constructor(containerId) {
@@ -7,53 +9,51 @@ export class World {
         this.width = window.innerWidth;
         this.height = window.innerHeight;
 
-        // 1. Создаем Сцену (Мир)
-        this.scene = new THREE.Scene();
-        // Темный туман, скрывающий горизонт (цвет как в твоем CSS --screen-bg)
-        this.scene.fog = new THREE.FogExp2(0x050a10, 0.0035);
-        this.scene.background = new THREE.Color(0x050a10);
+        // Переменные скорости
+        this.currentSpeed = CONFIG.speed.start;
+        this.targetSpeed = CONFIG.speed.max;
 
-        // 2. Камера (Глаза игрока)
-        // FOV 60, соотношение сторон, видит от 0.1 до 1000 метров
-        this.camera = new THREE.PerspectiveCamera(60, this.width / this.height, 0.1, 1000);
-        // Ставим камеру по центру, чуть выше (y=3) и сзади (z=15)
-        this.camera.position.set(0, 3, 15);
-        this.camera.lookAt(0, 0, -50); // Смотрим вдаль
-
-        // 3. Рендерер (Художник)
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-        this.renderer.setSize(this.width, this.height);
-        this.renderer.setPixelRatio(window.devicePixelRatio); // Для четкости на мобильных
-        this.container.appendChild(this.renderer.domElement);
-
-        // 4. Освещение
-        this.setupLights();
-
-        // 5. Создаем Окружение (Трасса и Город)
+        // Инициализация
+        this.initScene();
+        this.initLights();
+        
         this.city = new City(this.scene);
 
-        // Таймер для анимации
         this.clock = new THREE.Clock();
-
-        // Слушаем изменение размера окна
-        window.addEventListener('resize', () => this.onWindowResize(), false);
-
-        // Запускаем бесконечный цикл
+        window.addEventListener('resize', () => this.onResize());
         this.animate();
     }
 
-    setupLights() {
-        // Фоновый свет (чтобы не было полной тьмы)
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-        this.scene.add(ambientLight);
+    initScene() {
+        this.scene = new THREE.Scene();
+        this.scene.fog = new THREE.FogExp2(CONFIG.colors.fog, 0.003);
+        this.scene.background = new THREE.Color(CONFIG.colors.fog);
 
-        // Направленный свет (как луна или прожектор сити)
-        const dirLight = new THREE.DirectionalLight(0xff00ff, 0.8); // Маджента
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(this.width, this.height);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        // Включаем поддержку теней (на будущее)
+        this.renderer.shadowMap.enabled = true; 
+        this.container.appendChild(this.renderer.domElement);
+
+        this.camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, this.width / this.height, 0.1, 1000);
+        this.camera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
+    }
+
+    initLights() {
+        // 1. HemisphereLight (Небо + Земля)
+        // Первый цвет - небо (фиолетовый), Второй - земля (черный)
+        const hemiLight = new THREE.HemisphereLight(CONFIG.colors.sky, CONFIG.colors.ground, 1); 
+        this.scene.add(hemiLight);
+
+        // 2. Направленный свет (Имитация луны/прожектора)
+        const dirLight = new THREE.DirectionalLight(CONFIG.colors.neonPink, 1.5);
         dirLight.position.set(20, 50, 20);
+        dirLight.castShadow = true; // Пусть отбрасывает тени
         this.scene.add(dirLight);
     }
 
-    onWindowResize() {
+    onResize() {
         this.width = window.innerWidth;
         this.height = window.innerHeight;
         this.camera.aspect = this.width / this.height;
@@ -61,13 +61,22 @@ export class World {
         this.renderer.setSize(this.width, this.height);
     }
 
+    // Линейная интерполяция (Плавный переход от a к b)
+    lerp(start, end, factor) {
+        return start + (end - start) * factor;
+    }
+
     animate() {
         requestAnimationFrame(() => this.animate());
 
-        const dt = this.clock.getDelta(); // Время между кадрами
+        const dt = this.clock.getDelta();
 
-        // Обновляем город (движение дороги)
-        if (this.city) this.city.update(dt);
+        // 1. Плавный разгон (Lerp)
+        // Каждый кадр мы приближаем текущую скорость к целевой на маленький шаг
+        this.currentSpeed = this.lerp(this.currentSpeed, this.targetSpeed, dt * CONFIG.speed.acceleration);
+
+        // 2. Обновляем город (передаем текущую скорость)
+        if (this.city) this.city.update(this.currentSpeed, dt);
 
         this.renderer.render(this.scene, this.camera);
     }
