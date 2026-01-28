@@ -1,32 +1,30 @@
 const UI = {
     lang: 'ru',
-    
+    isMuted: false, // Флаг звука
+
     texts: {
         en: {
-            title: "CYBER RACER",
-            start: "START RACE",
+            start: "START GAME",
             langBtn: "LANG: EN",
-            credits: "BUILD v0.2 | SYSTEM READY",
             move: "MOVEMENT",
             look: "LOOK / STEER"
         },
         ru: {
-            title: "CYBER RACER",
-            start: "НАЧАТЬ ГОНКУ",
+            start: "НАЧАТЬ ИГРУ",
             langBtn: "ЯЗЫК: RU",
-            credits: "ВЕРСИЯ v0.2 | СИСТЕМА ГОТОВА",
             move: "ДВИЖЕНИЕ",
             look: "ОБЗОР / РУЛЬ"
         }
     },
 
     elements: {
-        title: document.querySelector('.cyber-glitch'),
         startBtn: document.getElementById('btn-start'),
         langBtn: document.getElementById('btn-lang'),
-        credits: document.querySelector('.credits'),
+        muteBtn: document.getElementById('btn-mute'),
+        muteIcon: document.querySelector('#btn-mute i'),
         menu: document.getElementById('main-menu'),
-        buttons: document.querySelectorAll('.cyber-btn'),
+        buttons: document.querySelectorAll('.mech-btn'), // Обновил класс
+        iconBoxes: document.querySelectorAll('.icon-box'),
         descMove: document.getElementById('desc-move'),
         descLook: document.getElementById('desc-look')
     },
@@ -36,66 +34,71 @@ const UI = {
         click: new Audio('assets/sounds/click.mp3')
     },
 
-    audioUnlocked: false,
-
     init: function() {
         this.sounds.hover.volume = 0.3;
         this.sounds.click.volume = 0.5;
 
-        // Пытаемся разблокировать аудио при первом же движении мыши по странице
-        document.body.addEventListener('mousemove', () => this.unlockAudioContext(), { once: true });
-        document.body.addEventListener('click', () => this.unlockAudioContext(), { once: true });
-
         this.updateTexts();
 
-        // КНОПКА СТАРТ
+        // Старт
         this.elements.startBtn.addEventListener('click', () => {
             this.playEngineSound(); 
             setTimeout(() => this.startGame(), 2000);
         });
 
-        // КНОПКА ЯЗЫКА
+        // Язык
         this.elements.langBtn.addEventListener('click', () => {
-            this.playSound('hover'); 
+            this.playSound('click'); 
             this.toggleLang();
         });
 
-        // ЗВУК НАВЕДЕНИЯ
+        // Кнопка MUTE
+        this.elements.muteBtn.addEventListener('click', () => {
+            this.toggleMute();
+        });
+
+        // Звуки кнопок
         this.elements.buttons.forEach(btn => {
-            btn.addEventListener('mouseenter', () => {
-                this.playSound('hover');
-            });
+            btn.addEventListener('mouseenter', () => this.playSound('hover'));
+        });
+        // Звуки иконок
+        this.elements.iconBoxes.forEach(icon => {
+            icon.addEventListener('mouseenter', () => this.playSound('hover'));
         });
     },
 
-    // Трюк для обхода блокировки браузера
-    unlockAudioContext: function() {
-        if (this.audioUnlocked) return;
+    toggleMute: function() {
+        this.isMuted = !this.isMuted;
         
-        // Запускаем и сразу ставим на паузу пустой звук, чтобы браузер дал добро
-        const silent = this.sounds.hover;
-        silent.play().then(() => {
-            silent.pause();
-            silent.currentTime = 0;
-            this.audioUnlocked = true;
-            console.log("Audio System Unlocked");
-        }).catch((e) => {
-            // Если всё еще нельзя, ждем клика
-        });
+        // Меняем вид иконки
+        if (this.isMuted) {
+            this.elements.muteIcon.classList.remove('fa-volume-up');
+            this.elements.muteIcon.classList.add('fa-volume-mute');
+            this.elements.muteIcon.style.color = '#555'; // Серый когда выкл
+            this.elements.muteIcon.style.textShadow = 'none';
+        } else {
+            this.elements.muteIcon.classList.remove('fa-volume-mute');
+            this.elements.muteIcon.classList.add('fa-volume-up');
+            this.elements.muteIcon.style.color = '#ff00ff'; // Розовый неон
+            this.elements.muteIcon.style.textShadow = '0 0 10px #ff00ff';
+            this.playSound('click');
+        }
     },
 
     playSound: function(soundName) {
-        if (!this.audioUnlocked) return; // Не играем, если браузер еще блокирует
+        if (this.isMuted) return; // Если выключено, молчим
         
         const sound = this.sounds[soundName];
         sound.currentTime = 0;
-        sound.play().catch(e => console.warn("Audio blocked:", e));
+        sound.play().catch(e => {});
     },
 
     playEngineSound: function() {
+        if (this.isMuted) return;
+
         const sound = this.sounds.click;
-        sound.currentTime = 1.0; // Пропуск 1 сек
-        sound.play().catch(e => console.warn(e));
+        sound.currentTime = 1.0; 
+        sound.play().catch(e => {});
         setTimeout(() => {
             sound.pause();
             sound.currentTime = 0;
@@ -109,10 +112,9 @@ const UI = {
 
     updateTexts: function() {
         const t = this.texts[this.lang];
-        this.elements.title.textContent = t.title;
-        this.elements.startBtn.textContent = t.start;
-        this.elements.langBtn.textContent = t.langBtn;
-        this.elements.credits.textContent = t.credits;
+        // Используем textContent для span внутри кнопок
+        this.elements.startBtn.querySelector('span').textContent = t.start;
+        this.elements.langBtn.querySelector('span').textContent = t.langBtn;
         this.elements.descMove.textContent = t.move;
         this.elements.descLook.textContent = t.look;
     },
