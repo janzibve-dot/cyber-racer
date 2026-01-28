@@ -1,25 +1,28 @@
+// js/game/Config.js
 export const CONFIG = {
     colors: {
-        sky: 0x000000,      // Черный фон
-        fog: 0x000000,      // Черный туман
-        neonCyan: 0x00f3ff, // Неон
-        neonPink: 0xff00ff, // Неон
-        road: 0x111111      // Асфальт
+        sky: 0x020205,      // Почти черный фон
+        fog: 0x020205,      // Туман в цвет фона для глубины
+        neonCyan: 0x00f3ff, // Основной цвет линий (как на фото)
+        neonYellow: 0xffea00, // Желтые вывески
+        neonRed: 0xff0055,    // Красные акценты
+        buildingBody: 0x000000 // Сами здания черные
     },
     camera: {
-        type: 'orthographic',
-        viewSize: 50,       // Размер кадра
-        // ВАЖНО: Опустили камеру (y: 10) и отодвинули назад (z: 50)
-        // Это даст вид "в спину", а не сверху.
-        position: { x: 0, y: 10, z: 50 } 
+        type: 'perspective', // ВЕРНУЛИ ПЕРСПЕКТИВУ для эффекта высоты
+        fov: 75,             // Широкий угол обзора
+        near: 0.1,
+        far: 1000,
+        // Позиция "глаз": высота 2 метра (как человек/машина), центр дороги
+        position: { x: 0, y: 2.5, z: 0 } 
     },
     speed: {
         start: 0,
-        max: 80,            
-        acceleration: 0.8   
+        max: 80,
+        acceleration: 0.8
     },
     road: {
-        width: 40,          
-        length: 200         
+        width: 40,
+        length: 200
     }
 };
