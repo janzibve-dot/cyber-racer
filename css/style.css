@@ -26,16 +26,22 @@ body {
     color: var(--text-color);
 }
 
-/* --- ФОН (СДВИНУТ ВПРАВО) --- */
+/* --- ФОН (РАСТЯНУТ ВЛЕВО) --- */
 .bg-overlay {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
+    top: 0; 
+    
+    /* 1. Сдвигаем начало контейнера влево за экран на 3.5см (130px) */
+    left: -130px; 
+    
+    /* 2. Увеличиваем ширину на эти же 130px, чтобы заполнить пространство */
+    width: calc(100% + 130px);
+    
+    height: 100%;
     z-index: -1;
     
-    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('../assets/images/bg.webp') no-repeat;
-    
-    /* Сдвигаем центр картинки на 130px (3.5 см) вправо */
-    background-position: calc(50% + 130px) center;
+    /* 3. Якорь 'right center': Правый угол остается на месте, картинка тянется влево */
+    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('../assets/images/bg.webp') no-repeat right center;
     
     background-size: cover;
 }
@@ -81,19 +87,15 @@ body {
     text-transform: uppercase;
     margin-right: -35px; 
 
-    /* Стиль: Красный + Желтая обводка */
     color: var(--neon-red);
     -webkit-text-stroke: 1px var(--neon-yellow);
     
-    /* Свечение */
     text-shadow: 
         0 0 5px var(--neon-red),
         0 0 15px rgba(255, 0, 60, 0.6);
 
-    /* Анимация поломки */
     animation: broken-sign 3s infinite step-end;
 }
-
 
 /* --- ОСТАЛЬНЫЕ СТИЛИ --- */
 .mech-top-bar {
