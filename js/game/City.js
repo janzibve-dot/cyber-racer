@@ -1,48 +1,78 @@
+// js/game/City.js
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+import { CONFIG } from './Config.js';
 
 export class City {
     constructor(scene) {
         this.scene = scene;
-        this.speed = 30; // Скорость игры (метров в секунду)
         
-        // Цвета из твоего CSS
-        this.colors = {
-            cyan: 0x00f3ff,
-            pink: 0xff00ff,
-            road: 0x1a1a20
-        };
+        // Создаем текстуру дороги программно (без картинок)
+        this.roadTexture = this.createProceduralRoadTexture();
+        this.roadTexture.wrapS = THREE.RepeatWrapping;
+        this.roadTexture.wrapT = THREE.RepeatWrapping;
+        // Повторяем текстуру 1 раз по ширине и 20 раз по длине
+        this.roadTexture.repeat.set(1, 20); 
+        // Важно для пиксель-арт стиля или четкости линий
+        this.roadTexture.anisotropy = 16; 
 
         this.initRoad();
     }
 
-    initRoad() {
-        // Создаем "пол" - бесконечную сетку
-        // GridHelper(размер, кол-во делений, цвет центра, цвет клетки)
-        const gridHelper = new THREE.GridHelper(400, 100, this.colors.pink, this.colors.cyan);
-        gridHelper.position.y = -0.5; // Чуть ниже колес
-        this.scene.add(gridHelper);
-        this.grid = gridHelper;
+    // Магия: Рисуем текстуру асфальта прямо в памяти браузера
+    createProceduralRoadTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
 
-        // Добавим простую плоскость под сеткой, чтобы снизу было темно
-        const planeGeo = new THREE.PlaneGeometry(400, 400);
-        const planeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-        const plane = new THREE.Mesh(planeGeo, planeMat);
-        plane.rotation.x = -Math.PI / 2; // Поворачиваем горизонтально
-        plane.position.y = -0.6;
-        this.scene.add(plane);
+        // 1. Черный фон (Асфальт)
+        ctx.fillStyle = '#111111';
+        ctx.fillRect(0, 0, 512, 512);
+
+        // 2. Шум (зернистость асфальта)
+        ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        for (let i = 0; i < 5000; i++) {
+            ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+        }
+
+        // 3. Неоновые полосы по бокам
+        ctx.fillStyle = '#00f3ff'; // Cyan
+        ctx.fillRect(0, 0, 10, 512); // Левая
+        ctx.fillRect(502, 0, 10, 512); // Правая
+
+        // 4. Центральная прерывистая линия
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(250, 0, 12, 512);
+
+        return new THREE.CanvasTexture(canvas);
     }
 
-    update(dt) {
-        // Эффект бесконечного движения
-        // Двигаем сетку по оси Z навстречу камере
-        const moveDistance = this.speed * dt;
+    initRoad() {
+        // Создаем плоскость дороги
+        const geometry = new THREE.PlaneGeometry(CONFIG.road.width, CONFIG.road.length);
         
-        this.grid.position.z += moveDistance;
+        // Material с Emissive (свечением)
+        const material = new THREE.MeshStandardMaterial({
+            map: this.roadTexture,       // Наша нарисованная текстура
+            roughness: 0.8,              // Асфальт шершавый
+            metalness: 0.2,
+            emissive: CONFIG.colors.neonCyan, // Свечение
+            emissiveMap: this.roadTexture,    // Карта свечения (светится то, что яркое на текстуре)
+            emissiveIntensity: 0.5            // Сила свечения
+        });
 
-        // Если сетка сместилась на размер одной клетки (4 метра), сбрасываем её назад
-        // 400 размер / 100 делений = 4
-        if (this.grid.position.z >= 4) {
-            this.grid.position.z = 0;
-        }
+        const road = new THREE.Mesh(geometry, material);
+        road.rotation.x = -Math.PI / 2; // Кладем на пол
+        road.position.z = -100; // Сдвигаем чуть вперед, чтобы не видеть начала
+        this.scene.add(road);
+        
+        this.roadMesh = road;
+    }
+
+    update(speed, dt) {
+        // Двигаем текстуру, а не сам объект! 
+        // Это самый производительный способ имитации движения.
+        // speed * dt * коэффициент масштаба
+        this.roadTexture.offset.y -= speed * dt * 0.05;
     }
 }
