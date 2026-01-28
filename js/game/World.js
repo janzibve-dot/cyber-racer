@@ -21,9 +21,9 @@ export class World {
     initScene() {
         // 1. Сцена
         this.scene = new THREE.Scene();
+        // Используем цвет из конфига. Если экран черный - значит конфиг обновился!
         this.scene.background = new THREE.Color(CONFIG.colors.sky);
-        // Туман
-        this.scene.fog = new THREE.Fog(CONFIG.colors.fog, 100, 300);
+        this.scene.fog = new THREE.Fog(CONFIG.colors.fog, 50, 200);
 
         // 2. Рендер
         this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -31,29 +31,25 @@ export class World {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.container.appendChild(this.renderer.domElement);
 
-        // 3. ОРТОГОНАЛЬНАЯ КАМЕРА
+        // 3. КАМЕРА (ИСПРАВЛЕНА ПОЗИЦИЯ)
         const aspect = this.width / this.height;
         const s = CONFIG.camera.viewSize;
 
         this.camera = new THREE.OrthographicCamera(
-            -s * aspect, // left
-            s * aspect,  // right
-            s,           // top
-            -s,          // bottom
-            1,           // near
-            1000         // far
+            -s * aspect, s * aspect, 
+            s, -s, 
+            1, 1000
         );
 
-        this.camera.position.set(20, 20, 20); 
-        this.camera.lookAt(0, 0, 0);
+        // Ставим камеру ровно сзади и сверху (Classic Arcade View)
+        // x=0 (центр), y=30 (высота), z=30 (дистанция)
+        this.camera.position.set(0, 30, 30); 
+        // Смотрим чуть вперед по дороге
+        this.camera.lookAt(0, 0, -20);
 
         // 4. Свет
-        const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+        const ambient = new THREE.AmbientLight(0xffffff, 1.0); // Яркий общий свет
         this.scene.add(ambient);
-        
-        const dirLight = new THREE.DirectionalLight(CONFIG.colors.neonCyan, 0.8);
-        dirLight.position.set(10, 50, 20);
-        this.scene.add(dirLight);
     }
 
     onResize() {
@@ -80,10 +76,8 @@ export class World {
 
         const dt = this.clock.getDelta();
         
-        // Плавный разгон
         this.currentSpeed = this.lerp(this.currentSpeed, this.targetSpeed, dt * CONFIG.speed.acceleration);
 
-        // Обновляем город
         if (this.city) this.city.update(this.currentSpeed, dt);
 
         this.renderer.render(this.scene, this.camera);
