@@ -15,209 +15,110 @@ body {
     color: var(--text-color);
 }
 
-/* --- ВИДЕО ФОН --- */
-#video-bg {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    min-width: 100%;
-    min-height: 100%;
-    z-index: -2;
-    object-fit: cover;
-    /* Если видео нет, показываем картинку кибер-города */
-    background: url('https://images.unsplash.com/photo-1572061486745-f09dfce76686?q=80&w=1920&auto=format&fit=crop') no-repeat center center;
-    background-size: cover;
-}
-
-/* Затемняющий слой поверх видео, чтобы меню выделялось */
+/* --- ФОН И ЗАТЕМНЕНИЕ --- */
 .bg-overlay {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(10, 5, 20, 0.6); /* Темно-синяя дымка */
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
     z-index: -1;
-    /* Добавляем эффект дождя/шума через CSS (опционально) */
-    backdrop-filter: blur(2px);
+    
+    /* ОБНОВЛЕНО: Путь к твоему файлу .webp */
+    /* ../ означает "выйти из папки css", потом зайти в assets -> images */
+    background: linear-gradient(rgba(10, 5, 20, 0.7), rgba(10, 5, 20, 0.7)), url('../assets/images/bg.webp') no-repeat center center;
+    
+    background-size: cover; /* Растягивает картинку на весь экран */
+}
+
+/* --- КОДОВЫЙ ДОЖДЬ --- */
+#rain-container {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 0; 
+    pointer-events: none; 
+}
+
+.rain-drop {
+    position: absolute;
+    bottom: 100%; 
+    width: 2px; 
+    height: 40px; 
+    background: linear-gradient(to bottom, transparent, rgba(0, 243, 255, 0.8)); 
+    box-shadow: 0 0 5px rgba(0, 243, 255, 0.3);
+    animation: rainFall linear infinite;
+}
+
+@keyframes rainFall {
+    to { transform: translateY(120vh); }
 }
 
 /* --- ГЛАВНЫЙ ИНТЕРФЕЙС --- */
 .mech-overlay {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100vh;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
     z-index: 10;
 }
 
 .game-title {
-    font-size: 3rem;
-    color: var(--neon-cyan);
-    text-shadow: 0 0 20px var(--neon-cyan);
-    margin-bottom: 20px;
-    letter-spacing: 10px;
-    text-transform: uppercase;
+    font-size: 3rem; color: var(--neon-cyan); text-shadow: 0 0 20px var(--neon-cyan);
+    margin-bottom: 20px; letter-spacing: 10px; text-transform: uppercase;
 }
 
-/* --- МЕХАНИКА МЕНЮ (как было) --- */
 .mech-top-bar {
-    width: 600px;
-    height: 80px;
-    background: linear-gradient(180deg, var(--metal-light) 0%, var(--metal-dark) 100%);
-    border: 3px solid #4a5568;
-    border-bottom: none;
-    border-radius: 15px 15px 0 0;
-    box-shadow: 0 0 15px rgba(0,0,0,0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 40px;
-    position: relative;
+    width: 600px; height: 80px; background: linear-gradient(180deg, var(--metal-light) 0%, var(--metal-dark) 100%);
+    border: 3px solid #4a5568; border-bottom: none; border-radius: 15px 15px 0 0;
+    box-shadow: 0 0 15px rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; gap: 40px; position: relative;
 }
 
-.icon-box {
-    font-size: 2rem;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
+.icon-box { font-size: 2rem; cursor: pointer; transition: transform 0.2s; }
 .settings-icon { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); }
 .sound-icon { color: var(--neon-pink); text-shadow: 0 0 10px var(--neon-pink); }
 .icon-box:hover { transform: scale(1.1); filter: brightness(1.2); }
 
 .mech-screen-frame {
-    width: 640px;
-    height: 250px;
-    background: var(--metal-dark);
-    border: 6px solid #3e4654;
-    border-radius: 10px;
-    box-shadow: 0 0 30px rgba(0,0,0,0.9);
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: -5px;
-    z-index: 2;
+    width: 640px; height: 250px; background: var(--metal-dark); border: 6px solid #3e4654;
+    border-radius: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.9); position: relative;
+    display: flex; justify-content: center; align-items: center; margin-top: -5px; z-index: 2;
 }
 
 .screen-inner {
-    width: 92%;
-    height: 85%;
-    background-color: var(--screen-bg);
-    border: 2px solid #1f2530;
-    box-shadow: inset 0 0 30px rgba(0,0,0,1);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    overflow: hidden;
+    width: 92%; height: 85%; background-color: var(--screen-bg); border: 2px solid #1f2530;
+    box-shadow: inset 0 0 30px rgba(0,0,0,1); display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden;
 }
 
-/* Сканлайн эффект */
 .scanlines::before {
-    content: " ";
-    display: block; position: absolute;
-    top: 0; left: 0; bottom: 0; right: 0;
+    content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
     background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-    z-index: 2;
-    background-size: 100% 4px, 6px 100%;
-    pointer-events: none;
+    z-index: 2; background-size: 100% 4px, 6px 100%; pointer-events: none;
 }
 
 .controls-wrapper { text-align: center; z-index: 3; width: 100%; }
-.key-bind {
-    display: block; font-size: 3rem; font-weight: 900; color: white;
-    text-shadow: 2px 2px 0px var(--neon-pink), -2px -2px 0px var(--neon-cyan);
-    letter-spacing: 5px;
-}
+.key-bind { display: block; font-size: 3rem; font-weight: 900; color: white; text-shadow: 2px 2px 0px var(--neon-pink), -2px -2px 0px var(--neon-cyan); letter-spacing: 5px; }
 .action-name { font-size: 1rem; color: var(--neon-cyan); letter-spacing: 3px; text-transform: uppercase; }
 .control-divider { height: 2px; width: 60%; background: var(--metal-light); margin: 10px auto; }
 
-/* Болты */
-.bolt {
-    position: absolute; width: 12px; height: 12px;
-    background: radial-gradient(circle, #5e6878 0%, #222 100%);
-    border-radius: 50%; border: 1px solid #111; box-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-}
-.bolt-tl { top: 10px; left: 10px; } .bolt-tr { top: 10px; right: 10px; }
-.bolt-bl { bottom: 10px; left: 10px; } .bolt-br { bottom: 10px; right: 10px; }
+.bolt { position: absolute; width: 12px; height: 12px; background: radial-gradient(circle, #5e6878 0%, #222 100%); border-radius: 50%; border: 1px solid #111; box-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+.bolt-tl { top: 10px; left: 10px; } .bolt-tr { top: 10px; right: 10px; } .bolt-bl { bottom: 10px; left: 10px; } .bolt-br { bottom: 10px; right: 10px; }
 
 .mech-bottom-panel {
-    width: 600px;
-    height: 120px;
-    background: #15181f;
-    border: 3px solid #4a5568;
-    border-top: none;
-    border-radius: 0 0 15px 15px;
-    margin-top: -5px;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
+    width: 600px; height: 120px; background: #15181f; border: 3px solid #4a5568; border-top: none;
+    border-radius: 0 0 15px 15px; margin-top: -5px; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden;
 }
 
-.circuit-bg {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.1;
-    background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, var(--neon-cyan) 10px, var(--neon-cyan) 11px);
-    z-index: 0;
-}
-
+.circuit-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.1; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, var(--neon-cyan) 10px, var(--neon-cyan) 11px); z-index: 0; }
 .mech-buttons-row { display: flex; gap: 30px; z-index: 1; width: 90%; justify-content: space-between; }
 
-/* --- КНОПКИ С МЕРЦАНИЕМ --- */
 .mech-btn {
-    flex: 1;
-    background: linear-gradient(180deg, #1d222c 0%, #0d1014 100%);
-    border: 2px solid var(--neon-cyan);
-    color: var(--text-color);
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.2rem;
-    padding: 15px 0;
-    cursor: pointer;
-    text-transform: uppercase;
-    position: relative;
-    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-    transition: transform 0.1s;
-    /* Стартовое свечение */
-    box-shadow: 0 0 10px rgba(0, 243, 255, 0.3), inset 0 0 10px rgba(0, 243, 255, 0.1);
+    flex: 1; background: linear-gradient(180deg, #1d222c 0%, #0d1014 100%); border: 2px solid var(--neon-cyan); color: var(--text-color); font-family: 'Orbitron', sans-serif; font-size: 1.2rem; padding: 15px 0; cursor: pointer; text-transform: uppercase; position: relative; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); transition: transform 0.1s; box-shadow: 0 0 10px rgba(0, 243, 255, 0.3), inset 0 0 10px rgba(0, 243, 255, 0.1);
 }
-
-/* Анимация нестабильной сети */
-.unstable-neon {
-    animation: neonFlicker 4s infinite;
-}
-
+.unstable-neon { animation: neonFlicker 4s infinite; }
 @keyframes neonFlicker {
-    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
-        border-color: var(--neon-cyan);
-        box-shadow: 0 0 10px rgba(0, 243, 255, 0.5), inset 0 0 15px rgba(0, 243, 255, 0.2);
-        color: white;
-    }
-    /* Моменты "сбоя" напряжения */
-    20%, 24%, 55% {
-        border-color: rgba(0, 243, 255, 0.2); /* Тусклая рамка */
-        box-shadow: none; /* Нет свечения */
-        color: rgba(255, 255, 255, 0.7); /* Тусклый текст */
-    }
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0, 243, 255, 0.5), inset 0 0 15px rgba(0, 243, 255, 0.2); color: white; }
+    20%, 24%, 55% { border-color: rgba(0, 243, 255, 0.2); box-shadow: none; color: rgba(255, 255, 255, 0.7); }
 }
-
-.mech-btn:hover {
-    background: linear-gradient(180deg, #2a313d 0%, #15191f 100%);
-    /* При наведении напряжение стабилизируется (убираем мерцание или усиливаем его) */
-    animation: none; 
-    border-color: #fff;
-    box-shadow: 0 0 25px var(--neon-cyan), inset 0 0 10px var(--neon-cyan);
-    transform: translateY(-2px);
-    text-shadow: 0 0 8px white;
-}
-
+.mech-btn:hover { background: linear-gradient(180deg, #2a313d 0%, #15191f 100%); animation: none; border-color: #fff; box-shadow: 0 0 25px var(--neon-cyan), inset 0 0 10px var(--neon-cyan); transform: translateY(-2px); text-shadow: 0 0 8px white; }
 .mech-btn:active { transform: translateY(1px); box-shadow: 0 0 5px var(--neon-cyan); }
-
-@media (max-width: 650px) {
-    .mech-top-bar, .mech-screen-frame, .mech-bottom-panel { width: 95%; }
-    .key-bind { font-size: 2rem; }
-    .game-title { font-size: 2rem; }
-    .mech-btn { font-size: 1rem; }
-}
+@media (max-width: 650px) { .mech-top-bar, .mech-screen-frame, .mech-bottom-panel { width: 95%; } .key-bind { font-size: 2rem; } .game-title { font-size: 2rem; } .mech-btn { font-size: 1rem; } }
 .credits { position: absolute; bottom: 10px; font-size: 0.7rem; color: #aaa; text-shadow: 1px 1px 2px black; }
 .hidden { display: none !important; }
