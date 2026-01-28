@@ -1,7 +1,6 @@
 :root {
     --neon-cyan: #00f3ff;
     --neon-pink: #ff00ff;
-    /* НОВЫЕ ЦВЕТА ДЛЯ ЗАГОЛОВКА */
     --neon-red: #ff003c;
     --neon-yellow: #ffe600;
     
@@ -27,12 +26,17 @@ body {
     color: var(--text-color);
 }
 
-/* --- ФОН --- */
+/* --- ФОН (СДВИНУТ ВПРАВО) --- */
 .bg-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
     z-index: -1;
-    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('../assets/images/bg.webp') no-repeat center center;
+    
+    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('../assets/images/bg.webp') no-repeat;
+    
+    /* Сдвигаем центр картинки на 130px (3.5 см) вправо */
+    background-position: calc(50% + 130px) center;
+    
     background-size: cover;
 }
 
@@ -66,11 +70,10 @@ body {
     z-index: 10;
 }
 
-/* === ЗАГОЛОВОК С ЭФФЕКТОМ СЛОМАННОЙ ВЫВЕСКИ === */
+/* === ЗАГОЛОВОК (КРАСНЫЙ СЛОМАННЫЙ НЕОН) === */
 .game-title {
     font-family: 'CyberpunkTitle', 'Orbitron', sans-serif;
     
-    /* Геометрия (как в прошлом шаге) */
     font-size: 7rem;
     letter-spacing: 35px;
     transform: translateY(-115px) scaleY(1.3);
@@ -78,24 +81,21 @@ body {
     text-transform: uppercase;
     margin-right: -35px; 
 
-    /* НОВЫЙ СТИЛЬ: Красный цвет и желтая обводка */
+    /* Стиль: Красный + Желтая обводка */
     color: var(--neon-red);
-    /* Тонкая желтая обводка в 1 пиксель */
     -webkit-text-stroke: 1px var(--neon-yellow);
     
-    /* Базовое свечение (снижена яркость на ~20% за счет уменьшения радиуса размытия) */
-    /* Было 25px, стало более тусклое и четкое */
+    /* Свечение */
     text-shadow: 
         0 0 5px var(--neon-red),
-        0 0 15px rgba(255, 0, 60, 0.6); /* Второй слой полупрозрачный для глубины */
+        0 0 15px rgba(255, 0, 60, 0.6);
 
-    /* Подключение анимации поломки */
-    /* step-end делает переходы резкими, как у коротящей лампы */
+    /* Анимация поломки */
     animation: broken-sign 3s infinite step-end;
 }
 
 
-/* --- ОСТАЛЬНЫЕ СТИЛИ (Без изменений) --- */
+/* --- ОСТАЛЬНЫЕ СТИЛИ --- */
 .mech-top-bar {
     width: 600px; height: 80px; background: linear-gradient(180deg, var(--metal-light) 0%, var(--metal-dark) 100%);
     border: 3px solid #4a5568; border-bottom: none; border-radius: 15px 15px 0 0;
@@ -154,34 +154,18 @@ body {
 .credits { position: absolute; bottom: 10px; font-size: 0.7rem; color: #aaa; text-shadow: 1px 1px 2px black; }
 .hidden { display: none !important; }
 
-/* === НОВАЯ АНИМАЦИЯ: СЛОМАННАЯ ВЫВЕСКА === */
+/* === АНИМАЦИЯ: СЛОМАННАЯ ВЫВЕСКА === */
 @keyframes broken-sign {
-    /* Основное состояние: горит, но немного тускло (85-90% яркости) */
     0%, 50%, 54%, 90%, 100% {
         opacity: 0.9;
-        text-shadow: 
-            0 0 5px var(--neon-red),
-            0 0 15px rgba(255, 0, 60, 0.6);
+        text-shadow: 0 0 5px var(--neon-red), 0 0 15px rgba(255, 0, 60, 0.6);
     }
-    /* Короткие вспышки полной яркости */
     51%, 91% {
         opacity: 1;
-        text-shadow: 
-            0 0 10px var(--neon-red),
-            0 0 25px rgba(255, 0, 60, 0.9),
-            0 0 40px var(--neon-red); /* Добавляем дальнее свечение */
+        text-shadow: 0 0 10px var(--neon-red), 0 0 25px rgba(255, 0, 60, 0.9), 0 0 40px var(--neon-red);
     }
-    /* Резкие провалы напряжения (тускнеет, но читается) */
-    52%, 92% {
-        opacity: 0.6;
-        text-shadow: none; /* Свечение пропадает */
-    }
-    /* Почти гаснет на долю секунды */
-    53% {
-        opacity: 0.3;
-        text-shadow: none;
-    }
-    /* Мелкое дрожание */
+    52%, 92% { opacity: 0.6; text-shadow: none; }
+    53% { opacity: 0.3; text-shadow: none; }
     70% { opacity: 0.8; }
     71% { opacity: 0.95; }
 }
