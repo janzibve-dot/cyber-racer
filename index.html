@@ -10,6 +10,12 @@
 </head>
 <body>
 
+    <video autoplay muted loop id="video-bg">
+        <source src="assets/video/bg.mp4" type="video/mp4">
+    </video>
+    
+    <div class="bg-overlay"></div>
+
     <div id="game-container"></div>
 
     <div id="main-menu" class="mech-overlay">
@@ -47,12 +53,11 @@
 
         <div class="mech-bottom-panel">
             <div class="circuit-bg"></div>
-            
             <div class="mech-buttons-row">
-                <button id="btn-start" class="mech-btn cyan-glow">
+                <button id="btn-start" class="mech-btn unstable-neon">
                     <span>НАЧАТЬ ГОНКУ</span>
                 </button>
-                <button id="btn-lang" class="mech-btn cyan-glow">
+                <button id="btn-lang" class="mech-btn unstable-neon">
                     <span>ЯЗЫК: RU</span>
                 </button>
             </div>
