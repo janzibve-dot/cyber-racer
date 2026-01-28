@@ -1,5 +1,4 @@
 const UI = {
-    // Устанавливаем русский язык по умолчанию
     lang: 'ru',
     
     texts: {
@@ -8,7 +7,6 @@ const UI = {
             start: "START RACE",
             langBtn: "LANG: EN",
             credits: "BUILD v0.2 | SYSTEM READY",
-            // Новые переводы для управления
             move: "MOVEMENT",
             look: "LOOK / STEER"
         },
@@ -17,7 +15,6 @@ const UI = {
             start: "НАЧАТЬ ГОНКУ",
             langBtn: "ЯЗЫК: RU",
             credits: "ВЕРСИЯ v0.2 | СИСТЕМА ГОТОВА",
-            // Новые переводы для управления
             move: "ДВИЖЕНИЕ",
             look: "ОБЗОР / РУЛЬ"
         }
@@ -30,7 +27,6 @@ const UI = {
         credits: document.querySelector('.credits'),
         menu: document.getElementById('main-menu'),
         buttons: document.querySelectorAll('.cyber-btn'),
-        // Новые элементы для перевода блока управления
         descMove: document.getElementById('desc-move'),
         descLook: document.getElementById('desc-look')
     },
@@ -40,23 +36,31 @@ const UI = {
         click: new Audio('assets/sounds/click.mp3')
     },
 
+    audioUnlocked: false,
+
     init: function() {
         this.sounds.hover.volume = 0.3;
         this.sounds.click.volume = 0.5;
 
-        // Принудительно обновляем текст при старте, чтобы убедиться, что всё совпадает
+        // Пытаемся разблокировать аудио при первом же движении мыши по странице
+        document.body.addEventListener('mousemove', () => this.unlockAudioContext(), { once: true });
+        document.body.addEventListener('click', () => this.unlockAudioContext(), { once: true });
+
         this.updateTexts();
 
+        // КНОПКА СТАРТ
         this.elements.startBtn.addEventListener('click', () => {
             this.playEngineSound(); 
             setTimeout(() => this.startGame(), 2000);
         });
 
+        // КНОПКА ЯЗЫКА
         this.elements.langBtn.addEventListener('click', () => {
             this.playSound('hover'); 
             this.toggleLang();
         });
 
+        // ЗВУК НАВЕДЕНИЯ
         this.elements.buttons.forEach(btn => {
             btn.addEventListener('mouseenter', () => {
                 this.playSound('hover');
@@ -64,15 +68,33 @@ const UI = {
         });
     },
 
+    // Трюк для обхода блокировки браузера
+    unlockAudioContext: function() {
+        if (this.audioUnlocked) return;
+        
+        // Запускаем и сразу ставим на паузу пустой звук, чтобы браузер дал добро
+        const silent = this.sounds.hover;
+        silent.play().then(() => {
+            silent.pause();
+            silent.currentTime = 0;
+            this.audioUnlocked = true;
+            console.log("Audio System Unlocked");
+        }).catch((e) => {
+            // Если всё еще нельзя, ждем клика
+        });
+    },
+
     playSound: function(soundName) {
+        if (!this.audioUnlocked) return; // Не играем, если браузер еще блокирует
+        
         const sound = this.sounds[soundName];
         sound.currentTime = 0;
-        sound.play().catch(e => console.warn(e));
+        sound.play().catch(e => console.warn("Audio blocked:", e));
     },
 
     playEngineSound: function() {
         const sound = this.sounds.click;
-        sound.currentTime = 1.0; 
+        sound.currentTime = 1.0; // Пропуск 1 сек
         sound.play().catch(e => console.warn(e));
         setTimeout(() => {
             sound.pause();
@@ -87,21 +109,16 @@ const UI = {
 
     updateTexts: function() {
         const t = this.texts[this.lang];
-        
-        // Обновляем основные тексты
         this.elements.title.textContent = t.title;
         this.elements.startBtn.textContent = t.start;
         this.elements.langBtn.textContent = t.langBtn;
         this.elements.credits.textContent = t.credits;
-        
-        // Обновляем блок управления
         this.elements.descMove.textContent = t.move;
         this.elements.descLook.textContent = t.look;
     },
 
     startGame: function() {
         this.elements.menu.classList.add('hidden');
-        console.log("Game State: Started");
         if (window.GameApp && window.GameApp.init) {
             window.GameApp.init();
         }
