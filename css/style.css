@@ -24,33 +24,33 @@ body {
     height: 100%;
     z-index: -1;
     
-    /* ОБНОВЛЕНО: Путь к твоему файлу .webp */
-    /* ../ означает "выйти из папки css", потом зайти в assets -> images */
-    background: linear-gradient(rgba(10, 5, 20, 0.7), rgba(10, 5, 20, 0.7)), url('../assets/images/bg.webp') no-repeat center center;
-    
-    background-size: cover; /* Растягивает картинку на весь экран */
+    /* ФОН: Опустили на 115px (3 см) вниз */
+    background: linear-gradient(rgba(10, 5, 20, 0.6), rgba(10, 5, 20, 0.6)), url('../assets/images/bg.webp') no-repeat;
+    background-position: center 115px; /* <-- Сдвиг вниз */
+    background-size: cover;
 }
 
-/* --- КОДОВЫЙ ДОЖДЬ --- */
+/* --- КОДОВЫЙ ДОЖДЬ (Исправленный) --- */
 #rain-container {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 0; 
+    z-index: 1; /* Подняли слой, чтобы он точно был виден над фоном */
     pointer-events: none; 
 }
 
 .rain-drop {
     position: absolute;
     bottom: 100%; 
-    width: 2px; 
-    height: 40px; 
-    background: linear-gradient(to bottom, transparent, rgba(0, 243, 255, 0.8)); 
-    box-shadow: 0 0 5px rgba(0, 243, 255, 0.3);
+    width: 3px; /* Сделали капли жирнее */
+    height: 60px; /* Сделали капли длиннее */
+    background: linear-gradient(to bottom, transparent, #00f3ff); /* Яркий неон */
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.5); /* Добавили свечение */
     animation: rainFall linear infinite;
 }
 
 @keyframes rainFall {
-    to { transform: translateY(120vh); }
+    0% { transform: translateY(-100px); }
+    100% { transform: translateY(120vh); }
 }
 
 /* --- ГЛАВНЫЙ ИНТЕРФЕЙС --- */
@@ -65,6 +65,7 @@ body {
     margin-bottom: 20px; letter-spacing: 10px; text-transform: uppercase;
 }
 
+/* --- ВЕРХНЯЯ ПАНЕЛЬ --- */
 .mech-top-bar {
     width: 600px; height: 80px; background: linear-gradient(180deg, var(--metal-light) 0%, var(--metal-dark) 100%);
     border: 3px solid #4a5568; border-bottom: none; border-radius: 15px 15px 0 0;
@@ -76,6 +77,7 @@ body {
 .sound-icon { color: var(--neon-pink); text-shadow: 0 0 10px var(--neon-pink); }
 .icon-box:hover { transform: scale(1.1); filter: brightness(1.2); }
 
+/* --- ЭКРАН --- */
 .mech-screen-frame {
     width: 640px; height: 250px; background: var(--metal-dark); border: 6px solid #3e4654;
     border-radius: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.9); position: relative;
@@ -101,6 +103,7 @@ body {
 .bolt { position: absolute; width: 12px; height: 12px; background: radial-gradient(circle, #5e6878 0%, #222 100%); border-radius: 50%; border: 1px solid #111; box-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
 .bolt-tl { top: 10px; left: 10px; } .bolt-tr { top: 10px; right: 10px; } .bolt-bl { bottom: 10px; left: 10px; } .bolt-br { bottom: 10px; right: 10px; }
 
+/* --- НИЖНЯЯ ПАНЕЛЬ --- */
 .mech-bottom-panel {
     width: 600px; height: 120px; background: #15181f; border: 3px solid #4a5568; border-top: none;
     border-radius: 0 0 15px 15px; margin-top: -5px; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden;
