@@ -1,7 +1,6 @@
 :root {
     --neon-blue: #00f3ff;
     --neon-pink: #ff00ff;
-    /* Добавляем желтый неон */
     --neon-yellow: #ffe600;
     --bg-dark: #050510;
     --text-color: #ffffff;
@@ -15,8 +14,6 @@ body {
     color: var(--text-color);
 }
 
-/* --- СТИЛИ МЕНЮ --- */
-
 .menu-overlay {
     position: absolute;
     top: 0;
@@ -25,96 +22,104 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: center; /* Центрирование по вертикали */
     align-items: center;
     background: radial-gradient(circle, rgba(10,10,30,0.9) 0%, rgba(0,0,0,1) 100%);
     z-index: 10;
-    /* Важно, чтобы рамка не увеличивала размер экрана */
     box-sizing: border-box; 
 }
 
-/* НОВОЕ: Желтая пульсирующая рамка экрана */
+/* Желтая пульсирующая рамка экрана */
 .cyber-yellow-border {
     border: 3px solid rgba(255, 230, 0, 0.5);
-    /* Внутреннее и внешнее свечение */
     box-shadow: inset 0 0 30px rgba(255, 230, 0, 0.2), 0 0 30px rgba(255, 230, 0, 0.2);
     animation: screenPulse 6s infinite ease-in-out;
 }
 
-/* Заголовок с глитч-эффектом */
+/* ЗАГОЛОВОК */
 .cyber-glitch {
-    font-size: 4rem;
+    /* Подгоняем высоту текста (размер шрифта) */
+    font-size: 5.5rem; 
     font-weight: 900;
-    letter-spacing: 5px;
-    text-shadow: 3px 3px var(--neon-pink), -3px -3px var(--neon-blue);
+    
+    /* Растягиваем ширину (+6 см визуально за счет интервалов) */
+    letter-spacing: 25px; 
+    margin-right: -25px; /* Компенсация отступа справа */
+    
+    text-shadow: 4px 4px var(--neon-pink), -4px -4px var(--neon-blue);
     position: relative;
-    /* Уменьшили отступ снизу, чтобы вместить блок управления */
-    margin-bottom: 30px; 
     text-transform: uppercase;
+    
+    /* Поднимаем выше на ~3 см (115px) */
+    margin-bottom: 80px; 
+    transform: translateY(-115px); 
 }
 
-/* --- НОВОЕ: БЛОК УПРАВЛЕНИЯ --- */
-
+/* БЛОК УПРАВЛЕНИЯ */
 .controls-container {
-    /* Делаем его квадратным */
-    width: 250px;
-    height: 250px;
-    /* Отступы от заголовка и кнопок */
+    /* Было 250px. Добавляем ~6см (225px). Итого ~475px */
+    width: 480px; 
+    height: 250px; /* Высоту оставляем прежней */
+    
+    /* Отступы */
     margin: 0 0 40px 0;
+    /* Подтягиваем блок вверх вслед за заголовком */
+    transform: translateY(-80px);
     
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Вертикальное расположение элементов */
     justify-content: center;
     align-items: center;
     text-align: center;
     
-    /* Легкий фон внутри квадрата */
     background: rgba(0, 243, 255, 0.05);
-    /* Обрезаем углы, как у кнопок */
-    clip-path: polygon(5% 0, 100% 0, 100% 95%, 95% 100%, 0 100%, 0 5%);
+    /* Clip-path растягивается вместе с шириной */
+    clip-path: polygon(5% 0, 100% 0, 100% 90%, 95% 100%, 0 100%, 0 10%);
 }
 
-/* Синее мерцание рамки блока */
 .cyber-blue-flicker {
     border: 2px solid var(--neon-blue);
     box-shadow: 0 0 15px var(--neon-blue), inset 0 0 15px var(--neon-blue);
     animation: boxFlicker 4s infinite alternate;
 }
 
-/* Стили текста внутри блока */
 .control-row {
-    margin: 15px 0;
+    margin: 10px 0;
+    width: 100%; /* Чтобы текст центрировался в широком блоке */
 }
 
-/* Желтые клавиши (как просил) */
 .key-highlight {
     display: block;
     color: var(--neon-yellow);
-    font-size: 1.3rem;
+    font-size: 1.5rem; /* Чуть крупнее */
     font-weight: bold;
     text-shadow: 0 0 10px var(--neon-yellow);
     margin-bottom: 5px;
+    letter-spacing: 5px;
 }
 
-/* Описание под клавишами (синее) */
 .control-desc {
     color: var(--neon-blue);
-    font-size: 0.9rem;
-    letter-spacing: 2px;
+    font-size: 1rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
 }
 
-/* Разделитель */
 .control-splitter {
     color: var(--neon-pink);
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     opacity: 0.7;
+    letter-spacing: 5px;
+    width: 100%;
 }
 
-/* --- КНОПКИ --- */
+/* КНОПКИ */
 .menu-buttons {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    /* Подтягиваем кнопки вверх */
+    transform: translateY(-50px);
 }
 
 .cyber-btn {
@@ -123,7 +128,7 @@ body {
     color: var(--neon-blue);
     font-family: 'Orbitron', sans-serif;
     font-size: 1.5rem;
-    padding: 15px 40px;
+    padding: 15px 60px; /* Сделали кнопки чуть шире */
     cursor: pointer;
     text-transform: uppercase;
     transition: all 0.3s ease;
@@ -138,20 +143,10 @@ body {
     transform: scale(1.05);
 }
 
-/* --- АДАПТИВ --- */
 @media (max-width: 600px) {
-    .cyber-glitch {
-        font-size: 2.5rem;
-    }
-    /* На мобилках блок управления делаем меньше */
-    .controls-container {
-        width: 200px;
-        height: 200px;
-        margin-bottom: 30px;
-    }
-    .key-highlight {
-        font-size: 1.1rem;
-    }
+    .cyber-glitch { font-size: 2.5rem; letter-spacing: 5px; transform: translateY(0); margin-bottom: 20px; }
+    .controls-container { width: 90%; height: auto; padding: 20px 0; transform: translateY(0); }
+    .menu-buttons { transform: translateY(0); }
 }
 
 .credits {
@@ -162,30 +157,19 @@ body {
     opacity: 0.7;
 }
 
-.hidden {
-    display: none !important;
-}
+.hidden { display: none !important; }
 
-/* --- АНИМАЦИИ --- */
-
-/* Плавная пульсация желтой рамки экрана */
+/* Анимации */
 @keyframes screenPulse {
-    0%, 100% {
-        opacity: 1;
-        box-shadow: inset 0 0 30px rgba(255, 230, 0, 0.3), 0 0 30px rgba(255, 230, 0, 0.3);
-    }
-    50% {
-        opacity: 0.7; /* Немного тускнеет */
-        box-shadow: inset 0 0 10px rgba(255, 230, 0, 0.1), 0 0 10px rgba(255, 230, 0, 0.1);
-    }
+    0%, 100% { opacity: 1; box-shadow: inset 0 0 30px rgba(255, 230, 0, 0.3), 0 0 30px rgba(255, 230, 0, 0.3); }
+    50% { opacity: 0.7; box-shadow: inset 0 0 10px rgba(255, 230, 0, 0.1), 0 0 10px rgba(255, 230, 0, 0.1); }
 }
 
-/* Нервное мерцание синего блока */
 @keyframes boxFlicker {
     0%, 100% { opacity: 1; border-color: var(--neon-blue); }
     3% { opacity: 0.8; border-color: rgba(0, 243, 255, 0.5); }
     6% { opacity: 1; border-color: var(--neon-blue); }
-    7% { opacity: 0.4; } /* Резкий провал */
+    7% { opacity: 0.4; } 
     8% { opacity: 1; }
     30% { box-shadow: 0 0 25px var(--neon-blue), inset 0 0 25px var(--neon-blue); }
     70% { box-shadow: 0 0 10px var(--neon-blue), inset 0 0 10px var(--neon-blue); }
