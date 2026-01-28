@@ -1,78 +1,98 @@
-// js/game/City.js
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 import { CONFIG } from './Config.js';
 
 export class City {
     constructor(scene) {
         this.scene = scene;
+        this.buildings = [];
         
-        // Создаем текстуру дороги программно (без картинок)
-        this.roadTexture = this.createProceduralRoadTexture();
-        this.roadTexture.wrapS = THREE.RepeatWrapping;
-        this.roadTexture.wrapT = THREE.RepeatWrapping;
-        // Повторяем текстуру 1 раз по ширине и 20 раз по длине
-        this.roadTexture.repeat.set(1, 20); 
-        // Важно для пиксель-арт стиля или четкости линий
-        this.roadTexture.anisotropy = 16; 
+        // Материалы (создаем один раз для оптимизации)
+        this.matWireCyan = new THREE.LineBasicMaterial({ color: CONFIG.colors.neonCyan });
+        this.matWirePink = new THREE.LineBasicMaterial({ color: CONFIG.colors.neonPink });
+        this.matDark = new THREE.MeshBasicMaterial({ color: 0x000000 });
 
         this.initRoad();
-    }
-
-    // Магия: Рисуем текстуру асфальта прямо в памяти браузера
-    createProceduralRoadTexture() {
-        const canvas = document.createElement('canvas');
-        canvas.width = 512;
-        canvas.height = 512;
-        const ctx = canvas.getContext('2d');
-
-        // 1. Черный фон (Асфальт)
-        ctx.fillStyle = '#111111';
-        ctx.fillRect(0, 0, 512, 512);
-
-        // 2. Шум (зернистость асфальта)
-        ctx.fillStyle = 'rgba(255,255,255,0.05)';
-        for (let i = 0; i < 5000; i++) {
-            ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
-        }
-
-        // 3. Неоновые полосы по бокам
-        ctx.fillStyle = '#00f3ff'; // Cyan
-        ctx.fillRect(0, 0, 10, 512); // Левая
-        ctx.fillRect(502, 0, 10, 512); // Правая
-
-        // 4. Центральная прерывистая линия
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(250, 0, 12, 512);
-
-        return new THREE.CanvasTexture(canvas);
+        this.initBuildings();
     }
 
     initRoad() {
-        // Создаем плоскость дороги
-        const geometry = new THREE.PlaneGeometry(CONFIG.road.width, CONFIG.road.length);
+        // Создаем текстуру дороги через Canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = 128; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
         
-        // Material с Emissive (свечением)
-        const material = new THREE.MeshStandardMaterial({
-            map: this.roadTexture,       // Наша нарисованная текстура
-            roughness: 0.8,              // Асфальт шершавый
-            metalness: 0.2,
-            emissive: CONFIG.colors.neonCyan, // Свечение
-            emissiveMap: this.roadTexture,    // Карта свечения (светится то, что яркое на текстуре)
-            emissiveIntensity: 0.5            // Сила свечения
-        });
+        // Черный асфальт
+        ctx.fillStyle = '#000'; ctx.fillRect(0,0,128,512);
+        // Циановые бордюры
+        ctx.fillStyle = '#00f3ff'; 
+        ctx.fillRect(0,0,4,512); ctx.fillRect(124,0,4,512);
+        // Полосы
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.fillRect(40, 0, 2, 512); ctx.fillRect(80, 0, 2, 512);
 
-        const road = new THREE.Mesh(geometry, material);
-        road.rotation.x = -Math.PI / 2; // Кладем на пол
-        road.position.z = -100; // Сдвигаем чуть вперед, чтобы не видеть начала
-        this.scene.add(road);
+        this.roadTex = new THREE.CanvasTexture(canvas);
+        this.roadTex.wrapT = THREE.RepeatWrapping;
+        this.roadTex.repeat.set(1, 10);
+        this.roadTex.magFilter = THREE.NearestFilter; 
+
+        const geo = new THREE.PlaneGeometry(CONFIG.road.width, 400);
+        const mat = new THREE.MeshBasicMaterial({ map: this.roadTex });
         
-        this.roadMesh = road;
+        this.road = new THREE.Mesh(geo, mat);
+        this.road.rotation.x = -Math.PI / 2;
+        this.road.position.z = -50;
+        this.scene.add(this.road);
+    }
+
+    initBuildings() {
+        // Создаем 30 пар зданий
+        for(let i=0; i<30; i++) {
+            this.spawnBuildingPair(-100 + i * 15);
+        }
+    }
+
+    spawnBuildingPair(z) {
+        this.createBuilding(-25, z, true); // Слева
+        this.createBuilding(25, z, false); // Справа
+    }
+
+    createBuilding(x, z, isLeft) {
+        const h = 10 + Math.random() * 30;
+        const w = 5 + Math.random() * 5;
+        
+        // Геометрия
+        const geo = new THREE.BoxGeometry(w, h, w);
+        const mesh = new THREE.Mesh(geo, this.matDark);
+        
+        // Wireframe (сетка)
+        const edges = new THREE.EdgesGeometry(geo);
+        const lineMat = isLeft ? this.matWireCyan : this.matWirePink;
+        const wires = new THREE.LineSegments(edges, lineMat);
+        
+        mesh.add(wires);
+        
+        mesh.position.set(x, h/2, z);
+        this.scene.add(mesh);
+        this.buildings.push(mesh);
     }
 
     update(speed, dt) {
-        // Двигаем текстуру, а не сам объект! 
-        // Это самый производительный способ имитации движения.
-        // speed * dt * коэффициент масштаба
-        this.roadTexture.offset.y -= speed * dt * 0.05;
+        const dist = speed * dt;
+
+        // 1. Двигаем текстуру дороги
+        this.roadTex.offset.y -= dist * 0.01;
+
+        // 2. Двигаем здания
+        this.buildings.forEach(b => {
+            b.position.z += dist;
+            
+            // Зацикливание зданий
+            if(b.position.z > 50) {
+                b.position.z = -200; 
+                const newH = 10 + Math.random() * 30;
+                b.scale.y = newH / (b.geometry.parameters.height); 
+                b.position.y = newH / 2;
+            }
+        });
     }
 }
