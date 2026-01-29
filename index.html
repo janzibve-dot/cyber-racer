@@ -11,20 +11,10 @@
 <body>
 
     <div id="rain-container"></div>
+    
     <div class="bg-overlay"></div>
 
     <div id="game-container"></div>
-
-    <div id="hud-panel" class="hidden">
-        <div class="hud-box">
-            <div class="hud-label">DIST</div>
-            <div id="dist-counter" class="hud-value">0000</div>
-        </div>
-        <div class="hud-box">
-            <div class="hud-label">SPD</div>
-            <div id="speed-counter" class="hud-value">0</div>
-        </div>
-    </div>
 
     <div id="main-menu" class="mech-overlay">
         
@@ -45,13 +35,13 @@
             <div class="screen-inner scanlines">
                 <div class="controls-wrapper">
                     <div class="control-group">
-                        <span class="key-bind">[MOUSE]</span>
-                        <span id="desc-move" class="action-name">РУЛИТЬ / ОБЗОР</span>
+                        <span class="key-bind">[W A S D]</span>
+                        <span id="desc-move" class="action-name">ДВИЖЕНИЕ</span>
                     </div>
                     <div class="control-divider"></div>
                     <div class="control-group">
-                        <span class="key-bind">[ESC]</span>
-                        <span id="desc-look" class="action-name">ПАУЗА</span>
+                        <span class="key-bind">[MOUSE]</span>
+                        <span id="desc-look" class="action-name">ОБЗОР / РУЛЬ</span>
                     </div>
                 </div>
             </div>
@@ -71,10 +61,11 @@
             </div>
         </div>
 
-        <div class="credits">ULTIMATE BUILD v2.0 | CAR + SOUND</div>
+        <div class="credits">ВЕРСИЯ v0.5 | ORTHO BUILD</div>
     </div>
 
     <script src="js/ui.js"></script>
+    
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
