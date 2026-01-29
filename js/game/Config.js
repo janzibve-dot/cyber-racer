@@ -2,17 +2,18 @@ export const CONFIG = {
     colors: {
         sky: 0x020205,
         fog: 0x020205,
-        // Палитра для домов (Желтый, Красный, Салатовый, Фиолетовый, Синий, Голубой)
+        // Разноцветные дома
         palette: [0xffea00, 0xff0055, 0x33ff00, 0x9900ff, 0x0000ff, 0x00f3ff],
-        roadLine: 0xffea00 // Желтая разметка
+        neonCyan: 0x00f3ff,
+        neonPink: 0xff00ff,
+        neonYellow: 0xffea00
     },
     camera: {
         type: 'perspective',
         fov: 75,
         near: 0.1,
         far: 1000,
-        // Базовая высота камеры
-        position: { x: 0, y: 2.5, z: 0 } 
+        position: { x: 0, y: 2.5, z: 0 }
     },
     speed: {
         start: 0,
