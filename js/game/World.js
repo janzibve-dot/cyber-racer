@@ -1,30 +1,28 @@
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 import { City } from './City.js';
+import { Car } from './Car.js'; // ИМПОРТ МАШИНЫ
 import { CONFIG } from './Config.js';
 
 export class World {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
         
-        // HUD элементы
         this.uiDist = document.getElementById('dist-counter');
         this.uiSpeed = document.getElementById('speed-counter');
-        this.uiPanel = document.getElementById('hud-panel');
-        this.uiPanel.classList.remove('hidden'); // Показываем HUD при старте
-
+        
         this.width = window.innerWidth;
         this.height = window.innerHeight;
-        
         this.isPaused = false;
         this.currentSpeed = CONFIG.speed.start;
         this.targetSpeed = CONFIG.speed.max;
-        this.totalDistance = 0; // Счетчик дистанции
-        
+        this.totalDistance = 0;
         this.mouseX = 0;
         this.mouseY = 0;
 
         this.initScene();
         this.city = new City(this.scene);
+        this.car = new Car(this.scene); // СОЗДАНИЕ МАШИНЫ
+        
         this.clock = new THREE.Clock();
 
         window.addEventListener('resize', () => this.onResize());
@@ -65,27 +63,19 @@ export class World {
     }
 
     updateCamera(time) {
-        // 1. Поворот головы (Mouse Look)
         const lookX = this.mouseX * 30;
         const lookY = 2.5 + (this.mouseY * 20);
         this.camera.lookAt(lookX, lookY, -100);
 
-        // 2. Head Bobbing (Покачивание при движении)
-        // Формула: Y = BaseY + Sin(Time * Frequency) * Amplitude
-        // Амплитуда зависит от скорости (стоим - не качает)
         const bobFreq = 15; 
         const bobAmp = 0.15 * (this.currentSpeed / CONFIG.speed.max);
-        
         this.camera.position.y = CONFIG.camera.position.y + Math.sin(time * bobFreq) * bobAmp;
     }
 
     updateHUD(dt) {
-        // Обновляем дистанцию (метры)
-        this.totalDistance += (this.currentSpeed * dt) / 10; // Делим на 10 для адекватных цифр
-        
-        // Округляем и выводим
-        this.uiDist.textContent = Math.floor(this.totalDistance).toString().padStart(4, '0');
-        this.uiSpeed.textContent = Math.floor(this.currentSpeed);
+        this.totalDistance += (this.currentSpeed * dt) / 10; 
+        if (this.uiDist) this.uiDist.textContent = Math.floor(this.totalDistance).toString().padStart(4, '0');
+        if (this.uiSpeed) this.uiSpeed.textContent = Math.floor(this.currentSpeed);
     }
 
     onResize() {
@@ -108,11 +98,11 @@ export class World {
         const dt = this.clock.getDelta();
         const time = this.clock.getElapsedTime();
 
-        // Физика разгона
         this.currentSpeed = this.lerp(this.currentSpeed, this.targetSpeed, dt * CONFIG.speed.acceleration);
 
-        // Обновления
         if (this.city) this.city.update(this.currentSpeed, dt);
+        if (this.car) this.car.update(this.currentSpeed, dt); // ОБНОВЛЕНИЕ МАШИНЫ
+
         this.updateHUD(dt);
         this.updateCamera(time);
 
