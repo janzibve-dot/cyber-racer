@@ -1,12 +1,13 @@
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 import { City } from './City.js';
-import { Car } from './Car.js'; // ИМПОРТ МАШИНЫ
+import { Car } from './Car.js';
 import { CONFIG } from './Config.js';
 
 export class World {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
         
+        // Ссылки на HUD элементы
         this.uiDist = document.getElementById('dist-counter');
         this.uiSpeed = document.getElementById('speed-counter');
         
@@ -15,13 +16,14 @@ export class World {
         this.isPaused = false;
         this.currentSpeed = CONFIG.speed.start;
         this.targetSpeed = CONFIG.speed.max;
-        this.totalDistance = 0;
+        this.totalDistance = 0; // Считаем метры
+        
         this.mouseX = 0;
         this.mouseY = 0;
 
         this.initScene();
         this.city = new City(this.scene);
-        this.car = new Car(this.scene); // СОЗДАНИЕ МАШИНЫ
+        this.car = new Car(this.scene);
         
         this.clock = new THREE.Clock();
 
@@ -73,7 +75,10 @@ export class World {
     }
 
     updateHUD(dt) {
+        // Считаем дистанцию
         this.totalDistance += (this.currentSpeed * dt) / 10; 
+        
+        // Обновляем HTML
         if (this.uiDist) this.uiDist.textContent = Math.floor(this.totalDistance).toString().padStart(4, '0');
         if (this.uiSpeed) this.uiSpeed.textContent = Math.floor(this.currentSpeed);
     }
@@ -101,9 +106,9 @@ export class World {
         this.currentSpeed = this.lerp(this.currentSpeed, this.targetSpeed, dt * CONFIG.speed.acceleration);
 
         if (this.city) this.city.update(this.currentSpeed, dt);
-        if (this.car) this.car.update(this.currentSpeed, dt); // ОБНОВЛЕНИЕ МАШИНЫ
+        if (this.car) this.car.update(this.currentSpeed, dt);
 
-        this.updateHUD(dt);
+        this.updateHUD(dt); // ВАЖНО: Обновление HUD
         this.updateCamera(time);
 
         this.renderer.render(this.scene, this.camera);
