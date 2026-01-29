@@ -4,123 +4,206 @@ import { CONFIG } from './Config.js';
 export class City {
     constructor(scene) {
         this.scene = scene;
-        this.buildings = [];
+        this.buildings = []; // Массив активных зданий
+        this.barriers = [];  // Массив ограждений
         this.colors = CONFIG.colors.palette;
+        
+        // Группы для порядка в сцене
+        this.cityGroup = new THREE.Group();
+        this.scene.add(this.cityGroup);
 
+        this.initEnvironment();
         this.initRoad();
-        this.initSky();
+        this.initBarriers(); // Новые неоновые отбойники
         this.initBuildings();
     }
 
+    initEnvironment() {
+        // "Кибер-пол" (Сетка снизу для глубины)
+        const gridHelper = new THREE.GridHelper(2000, 100, 0x1a1a20, 0x000000);
+        gridHelper.position.y = -10;
+        gridHelper.position.z = -500;
+        this.cityGroup.add(gridHelper);
+
+        // "Неоновый потолок" (Сетка сверху для атмосферы)
+        const skyGrid = new THREE.GridHelper(2000, 40, CONFIG.colors.neonPink, 0x000000);
+        skyGrid.position.y = 150;
+        skyGrid.position.z = -500;
+        skyGrid.material.transparent = true;
+        skyGrid.material.opacity = 0.15;
+        this.cityGroup.add(skyGrid);
+    }
+
     initRoad() {
-        const geo = new THREE.PlaneGeometry(CONFIG.road.width, 1000);
+        // Основное полотно дороги
+        const geo = new THREE.PlaneGeometry(CONFIG.road.width, 2000);
         const mat = new THREE.MeshBasicMaterial({ color: 0x050505 });
         this.road = new THREE.Mesh(geo, mat);
         this.road.rotation.x = -Math.PI / 2;
-        this.road.position.z = -200;
-        this.scene.add(this.road);
+        this.road.position.z = -500;
+        this.cityGroup.add(this.road);
 
-        const grid = new THREE.GridHelper(CONFIG.road.width, 4, 0x00f3ff, 0x00f3ff);
-        grid.position.y = 0.05;
-        grid.position.z = -200;
-        grid.scale.z = 5;
-        this.scene.add(grid);
+        // Светящаяся сетка на дороге
+        const grid = new THREE.GridHelper(CONFIG.road.width, 4, CONFIG.colors.neonCyan, CONFIG.colors.neonCyan);
+        grid.position.y = 0.1;
+        grid.position.z = -500;
+        grid.scale.z = 10;
+        this.cityGroup.add(grid);
         this.roadGrid = grid;
 
-        // Разметка
+        // Центральная разметка (анимированная текстура)
         const canvas = document.createElement('canvas');
         canvas.width = 64; canvas.height = 512;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = 'rgba(0,0,0,0)'; ctx.fillRect(0,0,64,512);
+        
+        // Прозрачный фон
+        ctx.fillStyle = 'rgba(0,0,0,0)'; 
+        ctx.fillRect(0,0,64,512);
+        
+        // Желтые полосы (стрелки)
         ctx.fillStyle = '#ffea00'; 
-        ctx.fillRect(28, 50, 8, 100);
-        ctx.fillRect(28, 250, 8, 100);
-        ctx.fillRect(28, 450, 8, 100);
+        // Рисуем стилизованную стрелку или прерывистую линию
+        ctx.fillRect(24, 50, 16, 120);
+        ctx.fillRect(24, 300, 16, 120);
 
         const tex = new THREE.CanvasTexture(canvas);
         tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(1, 10);
+        tex.repeat.set(1, 20); // Чаще повторяем
 
-        const lineGeo = new THREE.PlaneGeometry(2, 1000);
-        const lineMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, color: 0xffffff });
-        
+        const lineGeo = new THREE.PlaneGeometry(4, 2000);
+        const lineMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
         this.centerLine = new THREE.Mesh(lineGeo, lineMat);
         this.centerLine.rotation.x = -Math.PI / 2;
-        this.centerLine.position.y = 0.06;
-        this.centerLine.position.z = -200;
-        this.scene.add(this.centerLine);
+        this.centerLine.position.y = 0.15;
+        this.centerLine.position.z = -500;
+        this.cityGroup.add(this.centerLine);
     }
 
-    initSky() {
-        const grid = new THREE.GridHelper(600, 40, 0x111133, 0x111133);
-        grid.position.y = 80;
-        this.scene.add(grid);
+    initBarriers() {
+        // Создаем неоновые отбойники по краям дороги
+        const createBarrierSide = (xPos, color) => {
+            const geo = new THREE.BoxGeometry(1, 2, 2000);
+            const mat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+            const mesh = new THREE.Mesh(geo, mat);
+            
+            // Неоновая полоса на отбойнике
+            const edges = new THREE.EdgesGeometry(geo);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: color }));
+            mesh.add(line);
+
+            mesh.position.set(xPos, 1, -500);
+            this.cityGroup.add(mesh);
+            return mesh;
+        };
+
+        this.leftBarrier = createBarrierSide(-(CONFIG.road.width / 2) - 2, CONFIG.colors.neonPink);
+        this.rightBarrier = createBarrierSide((CONFIG.road.width / 2) + 2, CONFIG.colors.neonCyan);
     }
 
     initBuildings() {
-        for (let i = 0; i < 40; i++) {
-            this.spawnPair(-i * 25);
+        // Генерируем 30 пар зданий уходящих вдаль
+        for (let i = 0; i < 30; i++) {
+            this.spawnBuildingPair(-i * 40); // Расстояние между зданиями 40 единиц
         }
     }
 
-    spawnPair(z) {
-        const xLeft = -35 - Math.random() * 20; 
-        const xRight = 35 + Math.random() * 20;
-        this.createBuilding(xLeft, z);
-        this.createBuilding(xRight, z);
+    spawnBuildingPair(z) {
+        // Спавним слева и справа
+        this.createComplexBuilding(true, z);  // Left
+        this.createComplexBuilding(false, z); // Right
     }
 
-    createBuilding(x, z) {
-        const h = 30 + Math.random() * 90;
-        const w = 10 + Math.random() * 20;
-        const d = 10 + Math.random() * 20;
-
-        const colorIndex = Math.floor(Math.random() * this.colors.length);
-        const baseColorHex = this.colors[colorIndex];
-        const baseColor = new THREE.Color(baseColorHex).multiplyScalar(0.2);
+    createComplexBuilding(isLeft, z) {
+        const xOffset = isLeft ? -Math.random() * 40 - 45 : Math.random() * 40 + 45;
         
-        let outlineColorHex = baseColorHex;
-        while (outlineColorHex === baseColorHex) {
-            outlineColorHex = this.colors[Math.floor(Math.random() * this.colors.length)];
-        }
+        // Случайные параметры здания
+        const width = 15 + Math.random() * 20;
+        const depth = 15 + Math.random() * 20;
+        const height = 50 + Math.random() * 150; // Высокие небоскребы
+        
+        const buildingGroup = new THREE.Group();
+        buildingGroup.position.set(xOffset, 0, z);
 
-        const geo = new THREE.BoxGeometry(w, h, d);
-        const matBody = new THREE.MeshBasicMaterial({ color: baseColor });
-        const mesh = new THREE.Mesh(geo, matBody);
+        // Основное тело (Темное)
+        const geo = new THREE.BoxGeometry(width, height, depth);
+        const mat = new THREE.MeshBasicMaterial({ color: 0x0a0a10 });
+        const core = new THREE.Mesh(geo, mat);
+        core.position.y = height / 2;
+        buildingGroup.add(core);
 
+        // Неоновая обводка (Wireframe)
+        const colorHex = this.colors[Math.floor(Math.random() * this.colors.length)];
         const edges = new THREE.EdgesGeometry(geo);
-        const matLine = new THREE.LineBasicMaterial({ color: outlineColorHex, linewidth: 2 });
-        const wires = new THREE.LineSegments(edges, matLine);
-        mesh.add(wires);
+        const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: colorHex }));
+        core.add(lines);
 
-        if (Math.random() > 0.3) {
-            const dGeo = new THREE.BoxGeometry(w+0.2, h, d+0.2, 1, Math.floor(h/5), 1);
-            const dEdges = new THREE.EdgesGeometry(dGeo);
-            const dWires = new THREE.LineSegments(dEdges, matLine);
-            mesh.add(dWires);
+        // Детали: Антенна или второй этаж сверху (30% шанс)
+        if (Math.random() > 0.7) {
+            const topW = width * 0.5;
+            const topH = height * 0.3;
+            const topGeo = new THREE.BoxGeometry(topW, topH, depth * 0.5);
+            const topMesh = new THREE.Mesh(topGeo, mat);
+            
+            const topEdges = new THREE.EdgesGeometry(topGeo);
+            const topLines = new THREE.LineSegments(topEdges, new THREE.LineBasicMaterial({ color: CONFIG.colors.neonYellow }));
+            topMesh.add(topLines);
+
+            topMesh.position.y = height + (topH / 2);
+            buildingGroup.add(topMesh);
         }
 
-        mesh.position.set(x, h/2, z);
-        this.scene.add(mesh);
-        this.buildings.push(mesh);
+        // Детали: Случайные "светящиеся окна" (PlaneGeometry)
+        const windowGeo = new THREE.PlaneGeometry(2, height * 0.8);
+        const windowMat = new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide });
+        const windowMesh = new THREE.Mesh(windowGeo, windowMat);
+        // Смещаем окно на грань здания
+        windowMesh.position.set(0, height/2, depth/2 + 0.1); 
+        if (Math.random() > 0.5) windowMesh.rotation.y = Math.PI; // Иногда с другой стороны
+        buildingGroup.add(windowMesh);
+
+        this.cityGroup.add(buildingGroup);
+        this.buildings.push(buildingGroup);
     }
 
     update(speed, dt) {
-        const dist = speed * dt;
-        this.roadGrid.position.z += dist;
-        if (this.roadGrid.position.z > 0) this.roadGrid.position.z = -200;
-        this.centerLine.material.map.offset.y -= dist * 0.05;
+        const moveDistance = speed * dt;
 
+        // 1. Двигаем дорогу и текстуру (Эффект скорости)
+        // Сбрасываем текстуру, чтобы она не "уползала" бесконечно
+        this.centerLine.material.map.offset.y -= moveDistance * 0.02;
+
+        // 2. Эффект бесконечного движения для объектов окружения
+        // Мы не двигаем каждый объект отдельно (это дорого).
+        // Мы двигаем всю группу города назад, а когда она уходит слишком далеко — возвращаем объекты.
+        
+        // НО, так как у нас процедурная генерация, проще двигать объекты к камере:
+        
         this.buildings.forEach(b => {
-            b.position.z += dist;
-            if (b.position.z > 20) {
-                b.position.z = -800;
-                const isRight = b.position.x > 0;
-                b.position.x = isRight ? (35 + Math.random()*20) : (-35 - Math.random()*20);
-                const newH = 30 + Math.random() * 90;
-                b.scale.y = newH / b.geometry.parameters.height;
-                b.position.y = newH / 2;
+            b.position.z += moveDistance;
+
+            // Если здание ушло за спину игрока (z > 20), переносим его в конец очереди
+            if (b.position.z > 50) {
+                b.position.z = -1150; // Перемещаем далеко вперед (30 пар * 40 dist)
+                
+                // Перегенерируем высоту и цвет для разнообразия
+                // (В упрощенной версии просто меняем позицию X для эффекта нового города)
+                const isLeft = b.position.x < 0;
+                b.position.x = isLeft ? (-Math.random() * 40 - 45) : (Math.random() * 40 + 45);
+                
+                // Масштабируем по Y, чтобы изменить высоту здания динамически
+                const scaleY = 0.5 + Math.random() * 1.5;
+                b.scale.set(1, scaleY, 1);
             }
         });
+
+        // Анимация пола и потолка (бесконечный скролл)
+        const gridSpeed = moveDistance * 0.5; // Синхронизация с сеткой
+        // Сдвиг UV координат или позиции не всегда работает с GridHelper идеально,
+        // поэтому просто переносим их, если ушли за камеру.
+        // Но GridHelper в Three.js не имеет текстуры offset.
+        // Оставим их статичными для фона, или будем двигать всю группу roadGrid.
+        
+        this.roadGrid.position.z += moveDistance;
+        if (this.roadGrid.position.z > 0) this.roadGrid.position.z = -500;
     }
 }
