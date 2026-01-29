@@ -4,7 +4,7 @@ const UI = {
 
     texts: {
         en: { start: "START GAME", langBtn: "LANG: EN", move: "MOVEMENT", look: "LOOK / STEER" },
-        ru: { start: "НАЧАТЬ ИГРУ", langBtn: "ЯЗЫК: RU", move: "ДВИЖЕНИЕ", look: "ОБЗОР / РУЛЬ" }
+        ru: { start: "НАЧАТЬ ГОНКУ", langBtn: "ЯЗЫК: RU", move: "ДВИЖЕНИЕ", look: "ОБЗОР / РУЛЬ" }
     },
 
     elements: {
@@ -16,37 +16,45 @@ const UI = {
         buttons: document.querySelectorAll('.mech-btn'),
         iconBoxes: document.querySelectorAll('.icon-box'),
         descMove: document.getElementById('desc-move'),
-        descLook: document.getElementById('desc-look')
+        descLook: document.getElementById('desc-look'),
+        hud: document.getElementById('hud-panel') // Ссылка на HUD
     },
 
     sounds: {
         hover: new Audio('assets/sounds/hover.mp3'),
-        click: new Audio('assets/sounds/click.mp3')
+        click: new Audio('assets/sounds/click.mp3') // Тяжелый звук
     },
 
     init: function() {
+        // Настройка громкости
         this.sounds.hover.volume = 0.3;
         this.sounds.click.volume = 0.5;
 
         this.updateTexts();
 
-        // 1. Кнопка СТАРТ (только здесь звук мотора)
-        this.elements.startBtn.addEventListener('click', () => {
-            this.playEngineSound(); 
-            setTimeout(() => this.startGame(), 2000);
-        });
+        // 1. Кнопка СТАРТ
+        if (this.elements.startBtn) {
+            this.elements.startBtn.addEventListener('click', () => {
+                this.playEngineSound(); 
+                // Небольшая задержка перед стартом для звука
+                setTimeout(() => this.startGame(), 1000);
+            });
+        }
 
-        // 2. Кнопка ЯЗЫК (здесь обычный клик/ховер звук)
-        this.elements.langBtn.addEventListener('click', () => {
-            // ИСПРАВЛЕНИЕ: Используем легкий звук hover вместо тяжелого мотора
-            this.playSound('hover'); 
-            this.toggleLang();
-        });
+        // 2. Кнопка ЯЗЫК
+        if (this.elements.langBtn) {
+            this.elements.langBtn.addEventListener('click', () => {
+                this.playSound('hover'); 
+                this.toggleLang();
+            });
+        }
 
-        // Кнопка MUTE
-        this.elements.muteBtn.addEventListener('click', () => this.toggleMute());
+        // 3. Кнопка MUTE
+        if (this.elements.muteBtn) {
+            this.elements.muteBtn.addEventListener('click', () => this.toggleMute());
+        }
 
-        // Звуки наведения
+        // 4. Звуки наведения (Hover)
         this.elements.buttons.forEach(btn => {
             btn.addEventListener('mouseenter', () => this.playSound('hover'));
         });
@@ -72,20 +80,19 @@ const UI = {
     playSound: function(soundName) {
         if (this.isMuted) return;
         const sound = this.sounds[soundName];
-        sound.currentTime = 0;
-        sound.play().catch(e => {});
+        if (sound) {
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log("Audio blocked:", e));
+        }
     },
 
-    // Функция только для старта двигателя
     playEngineSound: function() {
         if (this.isMuted) return;
-        const sound = this.sounds.click; // Твой тяжелый файл
-        sound.currentTime = 1.0; 
-        sound.play().catch(e => {});
-        setTimeout(() => {
-            sound.pause();
-            sound.currentTime = 0;
-        }, 2000); 
+        const sound = this.sounds.click; 
+        if (sound) {
+            sound.currentTime = 0; 
+            sound.play().catch(e => {});
+        }
     },
 
     toggleLang: function() {
@@ -95,14 +102,23 @@ const UI = {
 
     updateTexts: function() {
         const t = this.texts[this.lang];
-        this.elements.startBtn.querySelector('span').textContent = t.start;
-        this.elements.langBtn.querySelector('span').textContent = t.langBtn;
-        this.elements.descMove.textContent = t.move;
-        this.elements.descLook.textContent = t.look;
+        if (this.elements.startBtn) this.elements.startBtn.querySelector('span').textContent = t.start;
+        if (this.elements.langBtn) this.elements.langBtn.querySelector('span').textContent = t.langBtn;
+        if (this.elements.descMove) this.elements.descMove.textContent = t.move;
+        // Проверка на существование элементов (на случай изменений HTML)
+        if (this.elements.descLook) this.elements.descLook.textContent = t.look;
     },
 
     startGame: function() {
+        // Скрываем меню
         this.elements.menu.classList.add('hidden');
+        
+        // Показываем HUD (Спидометр)
+        if (this.elements.hud) {
+            this.elements.hud.classList.remove('hidden');
+        }
+
+        // Запускаем мир (через глобальный объект из main.js)
         if (window.GameApp && window.GameApp.init) {
             window.GameApp.init();
         }
