@@ -8,9 +8,12 @@ export class City {
         this.colors = CONFIG.colors.palette;
         
         // Кэши ресурсов
-        this.windowTextures = []; // Текстуры фасадов
-        this.holoTextures = [];   // Текстуры рекламы
+        this.windowTextures = []; 
+        this.holoTextures = [];   
+        this.normalMap = null; // Карта нормалей для бетона
         
+        this.spawnCounter = 0; // Счетчик для Мега-Башен
+
         // Состояние удара
         this.hitTimerLeft = 0;
         this.hitTimerRight = 0;
@@ -22,7 +25,7 @@ export class City {
         this.cityGroup = new THREE.Group();
         this.scene.add(this.cityGroup);
 
-        this.initResources(); // Генерация всех текстур
+        this.initResources(); 
         this.initEnvironment();
         this.initRoad();
         this.initBarriers(); 
@@ -30,24 +33,41 @@ export class City {
     }
 
     initResources() {
-        // 1. Генерация текстур окон (Фасады)
+        // 1. Генерация карты нормалей (Noise)
+        const canvasNorm = document.createElement('canvas');
+        canvasNorm.width = 256; canvasNorm.height = 256;
+        const ctxNorm = canvasNorm.getContext('2d');
+        const imgData = ctxNorm.createImageData(256, 256);
+        for (let i = 0; i < imgData.data.length; i += 4) {
+            const val = 100 + Math.random() * 155; // Серый шум
+            imgData.data[i] = val;     // R
+            imgData.data[i+1] = val;   // G
+            imgData.data[i+2] = val;   // B
+            imgData.data[i+3] = 255;   // Alpha
+        }
+        ctxNorm.putImageData(imgData, 0, 0);
+        this.normalMap = new THREE.CanvasTexture(canvasNorm);
+        this.normalMap.wrapS = THREE.RepeatWrapping;
+        this.normalMap.wrapT = THREE.RepeatWrapping;
+
+        // 2. Генерация текстур окон
         for (let i = 0; i < 4; i++) {
             const canvas = document.createElement('canvas');
             canvas.width = 128; canvas.height = 256;
             const ctx = canvas.getContext('2d');
             
-            // Фон (темный бетон/стекло)
             ctx.fillStyle = '#050505';
             ctx.fillRect(0, 0, 128, 256);
 
-            // Окна
-            const windowColor = this.colors[Math.floor(Math.random() * this.colors.length)];
-            ctx.fillStyle = '#' + new THREE.Color(windowColor).getHexString();
-            
-            // Рисуем сетку окон
+            const baseColor = new THREE.Color(this.colors[Math.floor(Math.random() * this.colors.length)]);
+            const altColor = new THREE.Color(0xff3300); // Оранжевый/Красный для 5%
+
             for (let y = 10; y < 250; y += 15) {
                 for (let x = 5; x < 120; x += 10) {
-                    if (Math.random() > 0.4) { // Не все окна горят
+                    if (Math.random() > 0.4) { 
+                        // 5% шанс на другой цвет
+                        const isAlt = Math.random() < 0.05;
+                        ctx.fillStyle = '#' + (isAlt ? altColor.getHexString() : baseColor.getHexString());
                         ctx.fillRect(x, y, 6, 10);
                     }
                 }
@@ -58,7 +78,7 @@ export class City {
             this.windowTextures.push(tex);
         }
 
-        // 2. Генерация текстур голограмм (Реклама)
+        // 3. Генерация голограмм
         for (let i = 0; i < 10; i++) {
             const canvas = document.createElement('canvas');
             canvas.width = 256; canvas.height = 128;
@@ -101,7 +121,9 @@ export class City {
         const mat = new THREE.MeshStandardMaterial({ 
             color: 0x111111, 
             roughness: 0.2, 
-            metalness: 0.9 
+            metalness: 0.9,
+            normalMap: this.normalMap, // Используем шум как асфальт
+            normalScale: new THREE.Vector2(0.5, 0.5)
         });
         this.road = new THREE.Mesh(geo, mat);
         this.road.rotation.x = -Math.PI / 2;
@@ -158,86 +180,152 @@ export class City {
 
     initBuildings() {
         for (let i = 0; i < 30; i++) {
-            this.spawnBuildingPair(-i * 45); // Чуть больше расстояние для массивных зданий
+            this.spawnBuildingPair(-i * 50); 
         }
     }
 
     spawnBuildingPair(z) {
-        this.createRealisticBuilding(true, z);  
-        this.createRealisticBuilding(false, z); 
+        this.spawnCounter++;
+        const isMega = (this.spawnCounter % 50 === 0); // Мега-Башня каждое 50-е создание пар (или 25 пар)
+        
+        // Если Мега-Башня, спавним только одну огромную или две огромных
+        if (isMega) {
+             // Мега спавн
+             this.createRealisticBuilding(true, z, true);
+             this.createRealisticBuilding(false, z, true);
+             // Мост между Мега-Башнями через дорогу
+             this.createBridge(z, 60, 200); 
+        } else {
+             const bLeft = this.createRealisticBuilding(true, z, false);
+             const bRight = this.createRealisticBuilding(false, z, false);
+             
+             // Шанс 20% на мост
+             if (Math.random() > 0.8) {
+                 // Мост через дорогу (опасно, но красиво)
+                 this.createBridge(z, 20 + Math.random() * 40, 120); 
+             }
+        }
     }
 
-    createRealisticBuilding(isLeft, z) {
-        // Случайный сдвиг и размеры
-        const xOffset = isLeft ? -Math.random() * 50 - 50 : Math.random() * 50 + 50;
+    createBridge(z, height, width) {
+        // Горизонтальная труба
+        const geo = new THREE.CylinderGeometry(2, 2, width, 8);
+        geo.rotateZ(Math.PI / 2);
+        const mat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.5 });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(0, height, z);
         
-        // Главная группа здания
+        // Неоновые кольца на мосту
+        const ringGeo = new THREE.TorusGeometry(3, 0.2, 8, 16);
+        ringGeo.rotateY(Math.PI / 2); // Чтобы кольцо смотрело вдоль трубы (Z original, but rotated mesh Z is X global)
+        // Коррекция вращения
+        
+        const neonColor = CONFIG.colors.palette[Math.floor(Math.random()*CONFIG.colors.palette.length)];
+        const ringMat = new THREE.MeshBasicMaterial({ color: neonColor });
+        
+        const ring1 = new THREE.Mesh(ringGeo, ringMat);
+        ring1.position.x = -width/4;
+        ring1.rotateY(Math.PI/2);
+        mesh.add(ring1);
+        
+        const ring2 = new THREE.Mesh(ringGeo, ringMat);
+        ring2.position.x = width/4;
+        ring2.rotateY(Math.PI/2);
+        mesh.add(ring2);
+
+        this.cityGroup.add(mesh);
+        // Добавляем в массив зданий, чтобы двигалось вместе с миром
+        this.buildings.push(mesh);
+    }
+
+    createRealisticBuilding(isLeft, z, isMega) {
+        const xOffset = isLeft ? (-50 - (isMega ? 40 : Math.random() * 50)) : (50 + (isMega ? 40 : Math.random() * 50));
+        
         const buildingGroup = new THREE.Group();
         buildingGroup.position.set(xOffset, 0, z);
 
-        // Параметры
-        const baseWidth = 20 + Math.random() * 25;
-        const baseDepth = 20 + Math.random() * 25;
-        const totalHeight = 80 + Math.random() * 200;
+        const baseWidth = (isMega ? 60 : 20) + Math.random() * 25;
+        const baseDepth = (isMega ? 60 : 20) + Math.random() * 25;
+        const totalHeight = (isMega ? 300 : 80) + Math.random() * (isMega ? 200 : 200);
 
-        // Выбираем текстуру
         const tex = this.windowTextures[Math.floor(Math.random() * this.windowTextures.length)];
-        // Настройка повторения текстуры под размер здания
         const currentTex = tex.clone(); 
         currentTex.needsUpdate = true;
-        currentTex.repeat.set(1, totalHeight / 60); // Растягиваем текстуру вертикально
+        currentTex.repeat.set(isMega ? 3 : 1, totalHeight / 60);
 
-        // Материал здания (реагирует на свет + светится сам)
+        // MAPS: Normal Map для бетона
         const wallMat = new THREE.MeshStandardMaterial({
             color: 0x222222,
             map: currentTex,
             emissive: 0xffffff,
             emissiveMap: currentTex,
-            emissiveIntensity: 0.8, // Яркость окон
-            roughness: 0.3,
-            metalness: 0.6
+            emissiveIntensity: 0.8,
+            roughness: 0.9,
+            metalness: 0.1,
+            normalMap: this.normalMap, // РЕЛЬЕФ
+            normalScale: new THREE.Vector2(1, 1)
         });
 
-        // ЦВЕТОВАЯ СХЕМА: Неон на крыше и гранях
         const neonColorHex = this.colors[Math.floor(Math.random() * this.colors.length)];
         const neonMat = new THREE.MeshBasicMaterial({ color: neonColorHex });
 
-        // --- ГЕНЕРАЦИЯ ФОРМЫ (Секции) ---
-        // Строим здание из 3 секций ("свадебный торт")
         let currentY = 0;
         let currentW = baseWidth;
         let currentD = baseDepth;
 
-        const sections = Math.floor(Math.random() * 3) + 1; // 1-3 секции
+        const sections = Math.floor(Math.random() * 3) + 1; 
 
         for(let i = 0; i < sections; i++) {
             const sectionH = (totalHeight / sections) * (0.8 + Math.random() * 0.4);
-            
             const geo = new THREE.BoxGeometry(currentW, sectionH, currentD);
             const mesh = new THREE.Mesh(geo, wallMat);
             mesh.position.y = currentY + sectionH / 2;
             buildingGroup.add(mesh);
 
-            // Неоновая полоса по углам
             const edges = new THREE.EdgesGeometry(geo);
             const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: neonColorHex }));
             mesh.add(line);
+            
+            // ТРУБЫ И ВЕНТИЛЯЦИЯ (Сбоку здания)
+            if (Math.random() > 0.5) {
+                const pipeH = sectionH * 0.8;
+                const pipeGeo = new THREE.CylinderGeometry(2, 2, pipeH, 8);
+                const pipeMesh = new THREE.Mesh(pipeGeo, new THREE.MeshStandardMaterial({color: 0x111111}));
+                // Крепим сбоку (Left/Right/Front/Back случайность)
+                const side = Math.floor(Math.random()*4);
+                if(side === 0) pipeMesh.position.set(currentW/2 + 2, currentY + pipeH/2, 0); // Right
+                else if(side === 1) pipeMesh.position.set(-currentW/2 - 2, currentY + pipeH/2, 0); // Left
+                else if(side === 2) pipeMesh.position.set(0, currentY + pipeH/2, currentD/2 + 2); // Front
+                else pipeMesh.position.set(0, currentY + pipeH/2, -currentD/2 - 2); // Back
+                
+                buildingGroup.add(pipeMesh);
+            }
 
             currentY += sectionH;
-            // Уменьшаем следующий этаж
             currentW *= (0.6 + Math.random() * 0.3);
             currentD *= (0.6 + Math.random() * 0.3);
         }
 
-        // --- ДЕТАЛИ ---
-        // 1. Антенна на крыше
+        // Антенна
         const antH = 10 + Math.random() * 30;
         const antGeo = new THREE.CylinderGeometry(0.5, 0.5, antH, 8);
         const antMesh = new THREE.Mesh(antGeo, neonMat);
         antMesh.position.y = currentY + antH / 2;
         buildingGroup.add(antMesh);
 
-        // 2. Рекламный щит
+        // МАЯЧОК (PointLight)
+        const beaconGeo = new THREE.SphereGeometry(1, 8, 8);
+        const beaconMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const beaconMesh = new THREE.Mesh(beaconGeo, beaconMat);
+        beaconMesh.position.y = antH / 2; // На верхушке антенны
+        antMesh.add(beaconMesh);
+
+        // Реальный свет (аккуратно с производительностью, ставим малый радиус)
+        const light = new THREE.PointLight(0xff0000, 2, 100); 
+        light.position.set(0, 0, 0);
+        beaconMesh.add(light);
+
+        // Реклама
         if (Math.random() > 0.5) {
             const holoW = baseWidth * 0.9;
             const holoH = 15;
@@ -251,16 +339,14 @@ export class City {
                 blending: THREE.AdditiveBlending 
             });
             const holoMesh = new THREE.Mesh(holoGeo, holoMat);
-            // Приклеиваем к фасаду первой секции
             holoMesh.position.set(0, totalHeight * 0.4, (baseDepth/2) + 0.5);
-            // Разворот в случайную сторону (перед или зад)
             if(Math.random() > 0.5) holoMesh.rotation.y = Math.PI; 
-            
             buildingGroup.add(holoMesh);
         }
 
         this.cityGroup.add(buildingGroup);
         this.buildings.push(buildingGroup);
+        return buildingGroup;
     }
 
     triggerBarrierHit(side) {
@@ -296,13 +382,13 @@ export class City {
         this.buildings.forEach(b => {
             b.position.z += moveDistance;
             if (b.position.z > 50) {
-                b.position.z = -1300; // Дальше, чтобы не видеть спавна
-                const isLeft = b.position.x < 0;
-                b.position.x = isLeft ? (-Math.random() * 50 - 50) : (Math.random() * 50 + 50);
+                b.position.z = -1400; // Увеличил дальность респауна для Мега-Башен
                 
-                // Чтобы изменить высоту, нужно пересоздавать геометрию или скейлить.
-                // Скейл всей группы работает лучше.
-                b.scale.set(1, 0.5 + Math.random(), 1); 
+                // Перегенерация (упрощенная)
+                // Если это был мост (у него нет children с геометрией BoxGeometry как у зданий, 
+                // но мы просто двигаем его или удаляем). 
+                // В этом коде мы просто двигаем объекты. 
+                // Для "честной" генерации мега-башен нужно сложнее, но пока просто двигаем.
             }
         });
 
