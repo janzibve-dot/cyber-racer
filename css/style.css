@@ -1,173 +1,68 @@
 :root {
     --neon-cyan: #00f3ff;
     --neon-pink: #ff00ff;
-    --neon-red: #ff003c;
-    --neon-yellow: #ffe600;
-    
+    --neon-yellow: #ffea00;
     --metal-dark: #1a1a20;
     --metal-light: #2d323e;
     --screen-bg: #050a10;
     --text-color: #ffffff;
 }
+body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Orbitron', sans-serif; color: var(--text-color); }
 
-/* --- ПОДКЛЮЧЕНИЕ ШРИФТА --- */
-@font-face {
-    font-family: 'CyberpunkTitle';
-    src: url('../assets/fonts/Cyberpunk.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
+/* HUD (Игровой интерфейс) */
+#hud-panel {
+    position: absolute; top: 20px; right: 20px; display: flex; gap: 20px; z-index: 5;
 }
-
-body {
-    margin: 0;
-    overflow: hidden;
-    background-color: #000;
-    font-family: 'Orbitron', sans-serif;
-    color: var(--text-color);
+.hud-box {
+    background: rgba(5, 10, 16, 0.8); border: 2px solid var(--neon-cyan);
+    padding: 10px 20px; transform: skewX(-15deg);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
 }
+.hud-label { font-size: 0.8rem; color: #888; transform: skewX(15deg); letter-spacing: 2px; }
+.hud-value { font-size: 2rem; color: var(--neon-yellow); transform: skewX(15deg); text-shadow: 0 0 10px var(--neon-yellow); }
 
-/* --- ФОН (РАСТЯНУТ ВЛЕВО) --- */
+/* ФОН И ЭФФЕКТЫ */
 .bg-overlay {
-    position: fixed;
-    top: 0; 
-    
-    /* 1. Сдвигаем начало контейнера влево за экран на 3.5см (130px) */
-    left: -130px; 
-    
-    /* 2. Увеличиваем ширину на эти же 130px, чтобы заполнить пространство */
-    width: calc(100% + 130px);
-    
-    height: 100%;
-    z-index: -1;
-    
-    /* 3. Якорь 'right center': Правый угол остается на месте, картинка тянется влево */
-    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('../assets/images/bg.webp') no-repeat right center;
-    
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+    background: linear-gradient(rgba(10, 5, 20, 0.8), rgba(10, 5, 20, 0.9)), url('../assets/images/bg.webp') no-repeat center center;
     background-size: cover;
 }
-
-/* --- ДОЖДЬ --- */
-#rain-container {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 5;
-    pointer-events: none; 
-}
-
+#rain-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .rain-drop {
-    position: absolute;
-    bottom: 100%; 
-    width: 3px; 
-    height: 80px;
-    background: linear-gradient(to bottom, transparent, #ffffff); 
-    box-shadow: 0 0 8px #00f3ff; 
+    position: absolute; width: 2px; height: 40px; background: linear-gradient(to bottom, transparent, rgba(0, 243, 255, 0.5));
     animation: rainFall linear infinite;
 }
+@keyframes rainFall { to { transform: translateY(120vh); } }
 
-@keyframes rainFall {
-    0% { transform: translateY(-100px); }
-    100% { transform: translateY(120vh); }
-}
-
-/* --- ГЛАВНЫЙ ИНТЕРФЕЙС --- */
+/* МЕНЮ */
 .mech-overlay {
     position: absolute; top: 0; left: 0; width: 100%; height: 100vh;
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
-    z-index: 10;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10;
 }
-
-/* === ЗАГОЛОВОК (КРАСНЫЙ СЛОМАННЫЙ НЕОН) === */
-.game-title {
-    font-family: 'CyberpunkTitle', 'Orbitron', sans-serif;
-    
-    font-size: 7rem;
-    letter-spacing: 35px;
-    transform: translateY(-115px) scaleY(1.3);
-    margin-bottom: 40px; 
-    text-transform: uppercase;
-    margin-right: -35px; 
-
-    color: var(--neon-red);
-    -webkit-text-stroke: 1px var(--neon-yellow);
-    
-    text-shadow: 
-        0 0 5px var(--neon-red),
-        0 0 15px rgba(255, 0, 60, 0.6);
-
-    animation: broken-sign 3s infinite step-end;
-}
-
-/* --- ОСТАЛЬНЫЕ СТИЛИ --- */
-.mech-top-bar {
-    width: 600px; height: 80px; background: linear-gradient(180deg, var(--metal-light) 0%, var(--metal-dark) 100%);
-    border: 3px solid #4a5568; border-bottom: none; border-radius: 15px 15px 0 0;
-    box-shadow: 0 0 15px rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; gap: 40px; position: relative;
-}
-
-.icon-box { font-size: 2rem; cursor: pointer; transition: transform 0.2s; }
-.settings-icon { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); }
-.sound-icon { color: var(--neon-pink); text-shadow: 0 0 10px var(--neon-pink); }
-.icon-box:hover { transform: scale(1.1); filter: brightness(1.2); }
-
-.mech-screen-frame {
-    width: 640px; height: 250px; background: var(--metal-dark); border: 6px solid #3e4654;
-    border-radius: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.9); position: relative;
-    display: flex; justify-content: center; align-items: center; margin-top: -5px; z-index: 2;
-}
-
-.screen-inner {
-    width: 92%; height: 85%; background-color: var(--screen-bg); border: 2px solid #1f2530;
-    box-shadow: inset 0 0 30px rgba(0,0,0,1); display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden;
-}
-
-.scanlines::before {
-    content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-    z-index: 2; background-size: 100% 4px, 6px 100%; pointer-events: none;
-}
-
-.controls-wrapper { text-align: center; z-index: 3; width: 100%; }
-.key-bind { display: block; font-size: 3rem; font-weight: 900; color: white; text-shadow: 2px 2px 0px var(--neon-pink), -2px -2px 0px var(--neon-cyan); letter-spacing: 5px; }
-.action-name { font-size: 1rem; color: var(--neon-cyan); letter-spacing: 3px; text-transform: uppercase; }
-.control-divider { height: 2px; width: 60%; background: var(--metal-light); margin: 10px auto; }
-
-.bolt { position: absolute; width: 12px; height: 12px; background: radial-gradient(circle, #5e6878 0%, #222 100%); border-radius: 50%; border: 1px solid #111; box-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
-.bolt-tl { top: 10px; left: 10px; } .bolt-tr { top: 10px; right: 10px; } .bolt-bl { bottom: 10px; left: 10px; } .bolt-br { bottom: 10px; right: 10px; }
-
-.mech-bottom-panel {
-    width: 600px; height: 120px; background: #15181f; border: 3px solid #4a5568; border-top: none;
-    border-radius: 0 0 15px 15px; margin-top: -5px; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden;
-}
-
-.circuit-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.1; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, var(--neon-cyan) 10px, var(--neon-cyan) 11px); z-index: 0; }
-.mech-buttons-row { display: flex; gap: 30px; z-index: 1; width: 90%; justify-content: space-between; }
-
-.mech-btn {
-    flex: 1; background: linear-gradient(180deg, #1d222c 0%, #0d1014 100%); border: 2px solid var(--neon-cyan); color: var(--text-color); font-family: 'Orbitron', sans-serif; font-size: 1.2rem; padding: 15px 0; cursor: pointer; text-transform: uppercase; position: relative; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); transition: transform 0.1s; box-shadow: 0 0 10px rgba(0, 243, 255, 0.3), inset 0 0 10px rgba(0, 243, 255, 0.1);
-}
-.unstable-neon { animation: neonFlicker 4s infinite; }
-@keyframes neonFlicker {
-    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0, 243, 255, 0.5), inset 0 0 15px rgba(0, 243, 255, 0.2); color: white; }
-    20%, 24%, 55% { border-color: rgba(0, 243, 255, 0.2); box-shadow: none; color: rgba(255, 255, 255, 0.7); }
-}
-.mech-btn:hover { background: linear-gradient(180deg, #2a313d 0%, #15191f 100%); animation: none; border-color: #fff; box-shadow: 0 0 25px var(--neon-cyan), inset 0 0 10px var(--neon-cyan); transform: translateY(-2px); text-shadow: 0 0 8px white; }
-.mech-btn:active { transform: translateY(1px); box-shadow: 0 0 5px var(--neon-cyan); }
-@media (max-width: 650px) { .mech-top-bar, .mech-screen-frame, .mech-bottom-panel { width: 95%; } .key-bind { font-size: 2rem; } .game-title { font-size: 2rem; } .mech-btn { font-size: 1rem; } }
-.credits { position: absolute; bottom: 10px; font-size: 0.7rem; color: #aaa; text-shadow: 1px 1px 2px black; }
 .hidden { display: none !important; }
+.game-title { font-size: 3rem; color: var(--neon-cyan); text-shadow: 0 0 20px var(--neon-cyan); margin-bottom: 20px; letter-spacing: 10px; }
 
-/* === АНИМАЦИЯ: СЛОМАННАЯ ВЫВЕСКА === */
-@keyframes broken-sign {
-    0%, 50%, 54%, 90%, 100% {
-        opacity: 0.9;
-        text-shadow: 0 0 5px var(--neon-red), 0 0 15px rgba(255, 0, 60, 0.6);
-    }
-    51%, 91% {
-        opacity: 1;
-        text-shadow: 0 0 10px var(--neon-red), 0 0 25px rgba(255, 0, 60, 0.9), 0 0 40px var(--neon-red);
-    }
-    52%, 92% { opacity: 0.6; text-shadow: none; }
-    53% { opacity: 0.3; text-shadow: none; }
-    70% { opacity: 0.8; }
-    71% { opacity: 0.95; }
+/* ПАНЕЛИ МЕНЮ */
+.mech-top-bar { width: 600px; height: 60px; background: var(--metal-dark); border: 2px solid #444; border-radius: 10px 10px 0 0; display: flex; justify-content: center; gap: 40px; align-items: center; }
+.mech-screen-frame { width: 640px; height: 250px; background: var(--metal-dark); border: 4px solid #333; display: flex; justify-content: center; align-items: center; position: relative; }
+.screen-inner { width: 95%; height: 90%; background: var(--screen-bg); border: 1px solid #00f3ff; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,243,255,0.1); }
+.mech-bottom-panel { width: 600px; height: 100px; background: var(--metal-dark); border: 2px solid #444; border-top: none; display: flex; justify-content: center; align-items: center; }
+
+/* ЭЛЕМЕНТЫ */
+.scanlines::before { content: " "; position: absolute; top:0; left:0; right:0; bottom:0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%); background-size: 100% 4px; pointer-events: none; }
+.controls-wrapper { text-align: center; }
+.key-bind { display: block; font-size: 2rem; color: white; text-shadow: 2px 2px 0 var(--neon-pink); }
+.action-name { color: var(--neon-cyan); font-size: 0.8rem; letter-spacing: 2px; }
+.control-divider { height: 1px; background: #333; margin: 15px auto; width: 50%; }
+
+/* КНОПКИ */
+.mech-buttons-row { width: 90%; display: flex; gap: 20px; }
+.mech-btn {
+    flex: 1; padding: 15px; background: black; border: 1px solid var(--neon-cyan); color: white;
+    font-family: 'Orbitron'; font-size: 1.2rem; cursor: pointer; transition: 0.2s;
+    box-shadow: 0 0 10px rgba(0,243,255,0.2);
 }
+.mech-btn:hover { background: var(--neon-cyan); color: black; box-shadow: 0 0 20px var(--neon-cyan); }
+.icon-box { color: #555; font-size: 1.5rem; cursor: pointer; }
+.icon-box:hover { color: white; }
+.credits { position: absolute; bottom: 10px; color: #444; font-size: 0.7rem; }
