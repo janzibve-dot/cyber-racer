@@ -13,7 +13,7 @@ const UI = {
         muteBtn: document.getElementById('btn-mute'),
         muteIcon: document.querySelector('#btn-mute i'),
         menu: document.getElementById('main-menu'),
-        hud: document.getElementById('hud-panel'),
+        hud: document.getElementById('hud-panel'), // Добавил HUD
         buttons: document.querySelectorAll('.mech-btn'),
         iconBoxes: document.querySelectorAll('.icon-box'),
         descMove: document.getElementById('desc-move'),
@@ -22,7 +22,7 @@ const UI = {
 
     sounds: {
         hover: new Audio('assets/sounds/hover.mp3'),
-        click: new Audio('assets/sounds/click.mp3') // Тяжелый мотор
+        click: new Audio('assets/sounds/click.mp3') 
     },
 
     init: function() {
@@ -31,37 +31,30 @@ const UI = {
 
         this.updateTexts();
 
-        // 1. КНОПКА СТАРТ (Задержка 2.5 сек)
+        // КНОПКА СТАРТ (РОВНО 2.5 СЕКУНДЫ)
         if (this.elements.startBtn) {
             this.elements.startBtn.addEventListener('click', () => {
-                // Включаем звук
+                // 1. Сразу звук
                 this.playEngineSound();
                 
-                // Визуальный эффект нажатия (чтобы игрок понял, что нажал)
-                this.elements.startBtn.classList.add('active-state');
-                this.elements.startBtn.querySelector('span').textContent = "ЗАПУСК ДВИГАТЕЛЯ...";
-
-                // Ждем 2.5 секунды
+                // 2. Анимация нажатия
+                this.elements.startBtn.style.color = '#ffea00';
+                this.elements.startBtn.style.borderColor = '#ffea00';
+                
+                // 3. Ждем 2500мс
                 setTimeout(() => {
                     this.startGame();
                 }, 2500);
             });
         }
 
-        // 2. ЯЗЫК
         if (this.elements.langBtn) {
-            this.elements.langBtn.addEventListener('click', () => {
-                this.playSound('hover'); 
-                this.toggleLang();
-            });
+            this.elements.langBtn.addEventListener('click', () => { this.playSound('hover'); this.toggleLang(); });
         }
-
-        // 3. MUTE
         if (this.elements.muteBtn) {
             this.elements.muteBtn.addEventListener('click', () => this.toggleMute());
         }
 
-        // 4. Hover эффекты
         this.elements.buttons.forEach(btn => {
             btn.addEventListener('mouseenter', () => this.playSound('hover'));
         });
@@ -87,19 +80,13 @@ const UI = {
     playSound: function(soundName) {
         if (this.isMuted) return;
         const sound = this.sounds[soundName];
-        if (sound) {
-            sound.currentTime = 0;
-            sound.play().catch(e => {});
-        }
+        if (sound) { sound.currentTime = 0; sound.play().catch(e => {}); }
     },
 
     playEngineSound: function() {
         if (this.isMuted) return;
         const sound = this.sounds.click; 
-        if (sound) {
-            sound.currentTime = 0; 
-            sound.play().catch(e => {});
-        }
+        if (sound) { sound.currentTime = 0; sound.play().catch(e => {}); }
     },
 
     toggleLang: function() {
@@ -116,8 +103,11 @@ const UI = {
     },
 
     startGame: function() {
+        // Скрываем меню
         this.elements.menu.classList.add('hidden');
+        // Показываем HUD
         if (this.elements.hud) this.elements.hud.classList.remove('hidden');
+        // Запускаем мир
         if (window.GameApp && window.GameApp.init) {
             window.GameApp.init();
         }
