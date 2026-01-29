@@ -11,24 +11,28 @@
 <body>
 
     <div id="rain-container"></div>
-    
     <div class="bg-overlay"></div>
-
     <div id="game-container"></div>
+
+    <div id="hud-panel" class="hidden">
+        <div class="hud-box">
+            <div class="hud-label">DIST</div>
+            <div id="dist-counter" class="hud-value">0000</div>
+        </div>
+        <div class="hud-box">
+            <div class="hud-label">SPD</div>
+            <div id="speed-counter" class="hud-value">0</div>
+        </div>
+    </div>
 
     <div id="main-menu" class="mech-overlay">
         
         <h1 class="game-title">CYBER RACER</h1>
 
         <div class="mech-top-bar">
-            <div class="icon-box settings-icon">
-                <i class="fas fa-cog"></i>
-            </div>
-            <div class="icon-box sound-icon" id="btn-mute">
-                <i class="fas fa-volume-up"></i>
-            </div>
-            <div class="wire wire-left"></div>
-            <div class="wire wire-right"></div>
+            <div class="icon-box settings-icon"><i class="fas fa-cog"></i></div>
+            <div class="icon-box sound-icon" id="btn-mute"><i class="fas fa-volume-up"></i></div>
+            <div class="wire wire-left"></div><div class="wire wire-right"></div>
         </div>
 
         <div class="mech-screen-frame">
@@ -60,12 +64,10 @@
                 </button>
             </div>
         </div>
-
-        <div class="credits">ВЕРСИЯ v0.5 | ORTHO BUILD</div>
+        <div class="credits">HUD RESTORED | SOUND FIX</div>
     </div>
 
     <script src="js/ui.js"></script>
-    
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
