@@ -1,11 +1,22 @@
-// js/main.js
 import { World } from './game/World.js';
 
 console.log("Main Module Loaded");
 
-// Убираем старый дождь, если он был
+// Дождь в меню
 const RainSystem = {
     container: document.getElementById('rain-container'),
+    init: function() {
+        if(!this.container) return;
+        this.container.innerHTML = '';
+        for(let i=0; i<60; i++) {
+            const drop = document.createElement('div');
+            drop.className = 'rain-drop';
+            drop.style.left = Math.random()*100 + '%';
+            drop.style.animationDuration = (0.5+Math.random())+'s';
+            drop.style.animationDelay = Math.random()+'s';
+            this.container.appendChild(drop);
+        }
+    },
     destroy: function() {
         if(this.container) {
             this.container.innerHTML = '';
@@ -21,19 +32,12 @@ class GameApp {
     }
 
     init() {
-        console.log("GameApp: INIT called!");
         if (this.active) return;
         this.active = true;
-
         RainSystem.destroy();
-
-        try {
-            // Передаем ID контейнера
-            this.world = new World('game-container');
-        } catch (e) {
-            console.error("Error creating world:", e);
-        }
+        this.world = new World('game-container');
     }
 }
 
+RainSystem.init();
 window.GameApp = new GameApp();
