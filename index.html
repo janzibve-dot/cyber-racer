@@ -12,6 +12,7 @@
 
     <div id="rain-container"></div>
     <div class="bg-overlay"></div>
+
     <div id="game-container"></div>
 
     <div id="hud-panel" class="hidden">
@@ -26,25 +27,31 @@
     </div>
 
     <div id="main-menu" class="mech-overlay">
+        
         <h1 class="game-title">CYBER RACER</h1>
 
         <div class="mech-top-bar">
-            <div class="icon-box settings-icon"><i class="fas fa-cog"></i></div>
-            <div class="icon-box sound-icon" id="btn-mute"><i class="fas fa-volume-up"></i></div>
-            <div class="wire wire-left"></div><div class="wire wire-right"></div>
+            <div class="icon-box settings-icon">
+                <i class="fas fa-cog"></i>
+            </div>
+            <div class="icon-box sound-icon" id="btn-mute">
+                <i class="fas fa-volume-up"></i>
+            </div>
+            <div class="wire wire-left"></div>
+            <div class="wire wire-right"></div>
         </div>
 
         <div class="mech-screen-frame">
             <div class="screen-inner scanlines">
                 <div class="controls-wrapper">
                     <div class="control-group">
-                        <span class="key-bind">[MOUSE]</span>
-                        <span class="action-name">ОБЗОР</span>
+                        <span class="key-bind">[W A S D]</span>
+                        <span id="desc-move" class="action-name">ДВИЖЕНИЕ</span>
                     </div>
                     <div class="control-divider"></div>
                     <div class="control-group">
-                        <span class="key-bind">[ESC]</span>
-                        <span class="action-name">ПАУЗА</span>
+                        <span class="key-bind">[MOUSE]</span>
+                        <span id="desc-look" class="action-name">ОБЗОР / РУЛЬ</span>
                     </div>
                 </div>
             </div>
@@ -55,11 +62,16 @@
         <div class="mech-bottom-panel">
             <div class="circuit-bg"></div>
             <div class="mech-buttons-row">
-                <button id="btn-start" class="mech-btn unstable-neon"><span>НАЧАТЬ ГОНКУ</span></button>
-                <button id="btn-lang" class="mech-btn unstable-neon"><span>ЯЗЫК: RU</span></button>
+                <button id="btn-start" class="mech-btn unstable-neon">
+                    <span>НАЧАТЬ ГОНКУ</span>
+                </button>
+                <button id="btn-lang" class="mech-btn unstable-neon">
+                    <span>ЯЗЫК: RU</span>
+                </button>
             </div>
         </div>
-        <div class="credits">BUILD v1.2 | CHAOS CITY & PHYSICS</div>
+
+        <div class="credits">ВЕРСИЯ v1.3 | AUDIO FIX</div>
     </div>
 
     <script src="js/ui.js"></script>
