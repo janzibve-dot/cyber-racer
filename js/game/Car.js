@@ -8,10 +8,14 @@ export class Car {
         this.mesh = new THREE.Group();
         this.model = null;
         this.targetX = 0;
-        
-        // Увеличиваем скорость реакции, так как машина стала легче
         this.sideSpeed = 60; 
         
+        // --- HITBOX INFO ---
+        // Визуальная ширина: ~1.5 метра
+        // Визуальная длина: ~3.5 метра
+        // Для логики столкновений используем радиус 0.75 или Box3 (1.5, 1.0, 3.5)
+        // -------------------
+
         this.isNitro = false;
         this.isBraking = false;
         this.brakeLights = [];
@@ -20,14 +24,27 @@ export class Car {
         this.initControls();
         this.initLights();
         
-        this.mesh.position.set(0, 0.4, -5.5); // Опустили ниже (0.4), так как машина меньше
+        this.mesh.position.set(0, 0.4, -5.5); 
         this.scene.add(this.mesh);
     }
 
     loadModel() {
+        // ПРАВКА: Безопасная загрузка отражений
         const texLoader = new THREE.TextureLoader();
-        const envMap = texLoader.load('assets/images/env.jpg');
-        envMap.mapping = THREE.EquirectangularReflectionMapping;
+        let envMap = null;
+        
+        // Пытаемся загрузить. Если файла нет, onError сработает, игра не упадет.
+        texLoader.load(
+            'assets/images/env.jpg', 
+            (texture) => {
+                envMap = texture;
+                envMap.mapping = THREE.EquirectangularReflectionMapping;
+                // Если модель уже успела загрузиться раньше текстуры, применяем тут
+                if (this.model) this.applyReflections(envMap);
+            },
+            undefined, 
+            (err) => { console.warn('Env map not found, using default material'); }
+        );
 
         const loader = new GLTFLoader();
         loader.load('assets/models/Car2.glb', (gltf) => {
@@ -37,21 +54,27 @@ export class Car {
             const center = box.getCenter(new THREE.Vector3());
             this.model.position.sub(center);
 
-            // ПРАВКА: Уменьшил масштаб в 2 раза (было 3.8 -> 1.9)
             this.model.scale.set(1.9, 1.9, 1.9); 
             this.model.rotation.y = 0; 
 
-            this.model.traverse((child) => {
-                if (child.isMesh) {
-                    child.material.envMap = envMap;
-                    child.material.envMapIntensity = 2.0; // Усилил отражения
-                    child.material.metalness = 1.0;
-                    child.material.roughness = 0.0;
-                }
-            });
+            // Если текстура загрузилась раньше модели, применяем сразу
+            if (envMap) this.applyReflections(envMap);
 
             this.mesh.add(this.model);
         }, undefined, (e) => this.createPlaceholder());
+    }
+
+    // Вынес логику наложения отражений в отдельный метод
+    applyReflections(map) {
+        this.model.traverse((child) => {
+            if (child.isMesh) {
+                child.material.envMap = map;
+                child.material.envMapIntensity = 2.0; 
+                child.material.metalness = 1.0;
+                child.material.roughness = 0.0;
+                child.material.needsUpdate = true;
+            }
+        });
     }
 
     createPlaceholder() {
@@ -61,13 +84,10 @@ export class Car {
     }
 
     initLights() {
-        // Огни стали ближе к центру, так как машина меньше
         const lightL = new THREE.PointLight(0xff0000, 0.5, 8);
         const lightR = new THREE.PointLight(0xff0000, 0.5, 8);
-        
-        lightL.position.set(-0.4, 0.3, 1.2); // Скорректированы координаты
+        lightL.position.set(-0.4, 0.3, 1.2); 
         lightR.position.set(0.4, 0.3, 1.2);
-
         this.mesh.add(lightL);
         this.mesh.add(lightR);
         this.brakeLights.push(lightL, lightR);
@@ -79,7 +99,6 @@ export class Car {
         window.addEventListener('keyup', (e) => this.updateKeys(e.code, false));
         window.addEventListener('mousemove', (e) => {
             if (!this.model) return;
-            // Ограничиваем движение мыши шириной дороги
             this.targetX = ((e.clientX / window.innerWidth) * 2 - 1) * (CONFIG.road.width * 0.4);
         });
     }
@@ -101,8 +120,6 @@ export class Car {
         const intensity = this.isBraking ? 5.0 : 0.5; 
         this.brakeLights.forEach(l => l.intensity = intensity);
 
-        // ПРАВКА: Лимит движения. Дорога 40, пол-дороги 20. Машина 1.5 шириной.
-        // Оставляем запас 2.0 от края.
         const limit = (CONFIG.road.width / 2) - 3.0;
         this.targetX = Math.max(-limit, Math.min(limit, this.targetX));
         
