@@ -3,19 +3,16 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CONFIG } from './Config.js';
 
 export class Car {
-    constructor(scene) {
+    // Принимаем loadingManager в конструктор
+    constructor(scene, loadingManager) {
         this.scene = scene;
+        this.loadingManager = loadingManager;
+        
         this.mesh = new THREE.Group();
         this.model = null;
         this.targetX = 0;
         this.sideSpeed = 60; 
         
-        // --- HITBOX INFO ---
-        // Визуальная ширина: ~1.5 метра
-        // Визуальная длина: ~3.5 метра
-        // Для логики столкновений используем радиус 0.75 или Box3 (1.5, 1.0, 3.5)
-        // -------------------
-
         this.isNitro = false;
         this.isBraking = false;
         this.brakeLights = [];
@@ -29,24 +26,23 @@ export class Car {
     }
 
     loadModel() {
-        // ПРАВКА: Безопасная загрузка отражений
-        const texLoader = new THREE.TextureLoader();
+        // Передаем manager в загрузчики
+        const texLoader = new THREE.TextureLoader(this.loadingManager);
         let envMap = null;
         
-        // Пытаемся загрузить. Если файла нет, onError сработает, игра не упадет.
+        // Загрузка карты окружения
         texLoader.load(
             'assets/images/env.jpg', 
             (texture) => {
                 envMap = texture;
                 envMap.mapping = THREE.EquirectangularReflectionMapping;
-                // Если модель уже успела загрузиться раньше текстуры, применяем тут
                 if (this.model) this.applyReflections(envMap);
             },
             undefined, 
-            (err) => { console.warn('Env map not found, using default material'); }
+            (err) => { console.warn('Env map missing, skipping reflections'); }
         );
 
-        const loader = new GLTFLoader();
+        const loader = new GLTFLoader(this.loadingManager);
         loader.load('assets/models/Car2.glb', (gltf) => {
             this.model = gltf.scene;
             
@@ -57,14 +53,12 @@ export class Car {
             this.model.scale.set(1.9, 1.9, 1.9); 
             this.model.rotation.y = 0; 
 
-            // Если текстура загрузилась раньше модели, применяем сразу
             if (envMap) this.applyReflections(envMap);
 
             this.mesh.add(this.model);
         }, undefined, (e) => this.createPlaceholder());
     }
 
-    // Вынес логику наложения отражений в отдельный метод
     applyReflections(map) {
         this.model.traverse((child) => {
             if (child.isMesh) {
@@ -82,7 +76,7 @@ export class Car {
         const mat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, wireframe: true });
         this.mesh.add(new THREE.Mesh(geo, mat));
     }
-
+    
     initLights() {
         const lightL = new THREE.PointLight(0xff0000, 0.5, 8);
         const lightR = new THREE.PointLight(0xff0000, 0.5, 8);
@@ -124,7 +118,6 @@ export class Car {
         this.targetX = Math.max(-limit, Math.min(limit, this.targetX));
         
         this.mesh.position.x += (this.targetX - this.mesh.position.x) * 0.1;
-        
         this.mesh.rotation.z = 0; 
         this.mesh.position.y = 0.4 + Math.sin(Date.now() * 0.005) * 0.02;
     }
