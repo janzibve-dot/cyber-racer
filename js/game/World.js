@@ -1,11 +1,11 @@
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-// Импортируем модули для Bloom эффекта
-import { EffectComposer } from 'https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js';
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 import { City } from './City.js';
 import { Car } from './Car.js';
+import { Obstacles } from './Obstacles.js'; 
 import { CONFIG } from './Config.js';
 
 export class World {
@@ -23,10 +23,11 @@ export class World {
         this.mouseY = 0;
 
         this.initScene();
-        this.initPostProcessing(); // НОВОЕ: Настройка Bloom
+        this.initPostProcessing();
 
         this.city = new City(this.scene);
         this.car = new Car(this.scene);
+        this.obstacles = new Obstacles(this.scene);
         this.clock = new THREE.Clock();
 
         window.addEventListener('resize', () => this.onResize());
@@ -38,32 +39,27 @@ export class World {
     initScene() {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(CONFIG.colors.sky);
-        // Туман, скрывающий конец мира
         this.scene.fog = new THREE.Fog(CONFIG.colors.sky, 100, 1500); 
 
-        this.renderer = new THREE.WebGLRenderer({ antialias: false }); // Antialias отключаем для Bloom (он сам сглаживает)
+        this.renderer = new THREE.WebGLRenderer({ antialias: false }); 
         this.renderer.setSize(this.width, this.height);
         this.renderer.setPixelRatio(window.devicePixelRatio);
-        // Включаем поддержку теней и тонирования (опционально)
         this.renderer.toneMapping = THREE.ReinhardToneMapping;
         this.container.appendChild(this.renderer.domElement);
 
-        this.camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, this.width / this.height, 0.1, 2000); // Far увеличил до 2000
+        this.camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, this.width / this.height, 0.1, 2000);
         this.camera.position.set(CONFIG.camera.position.x, CONFIG.camera.position.y, CONFIG.camera.position.z);
         
         const ambient = new THREE.AmbientLight(0xffffff, 1.5);
         this.scene.add(ambient);
     }
 
-    // НОВОЕ: Настройка Bloom
     initPostProcessing() {
         const renderScene = new RenderPass(this.scene, this.camera);
-
-        // Параметры: Разрешение, Сила, Радиус, Порог
         const bloomPass = new UnrealBloomPass(new THREE.Vector2(this.width, this.height), 1.5, 0.4, 0.85);
-        bloomPass.threshold = 0.2; // Начинать светиться, если яркость выше 0.2
-        bloomPass.strength = 1.2;  // Сила свечения (Киношность)
-        bloomPass.radius = 0.5;    // Радиус размытия
+        bloomPass.threshold = 0.2;
+        bloomPass.strength = 1.2; 
+        bloomPass.radius = 0.5;
 
         this.composer = new EffectComposer(this.renderer);
         this.composer.addPass(renderScene);
@@ -83,14 +79,18 @@ export class World {
         }
     }
 
-    updateCamera(time) {
+    updateCamera(time, dt) {
         const lookX = this.mouseX * 30;
         const lookY = 2.5 + (this.mouseY * 20);
         this.camera.lookAt(lookX, lookY, -100);
         
-        const bobFreq = 15; 
+        const bobFreq = (this.car && this.car.isNitro) ? 25 : 15; 
         const bobAmp = 0.15 * (this.currentSpeed / CONFIG.speed.max);
         this.camera.position.y = CONFIG.camera.position.y + Math.sin(time * bobFreq) * bobAmp;
+
+        const targetFOV = (this.car && this.car.isNitro) ? CONFIG.camera.fov + 15 : CONFIG.camera.fov;
+        this.camera.fov += (targetFOV - this.camera.fov) * 0.1;
+        this.camera.updateProjectionMatrix();
     }
 
     updateHUD(dt) {
@@ -117,15 +117,23 @@ export class World {
         const dt = this.clock.getDelta();
         const time = this.clock.getElapsedTime();
 
-        this.currentSpeed = this.lerp(this.currentSpeed, this.targetSpeed, dt * CONFIG.speed.acceleration);
+        let finalTargetSpeed = CONFIG.speed.max;
+        if (this.car) {
+            if (this.car.isNitro) finalTargetSpeed *= 1.8;
+            if (this.car.isBraking) finalTargetSpeed *= 0.2;
+        }
+
+        this.currentSpeed = this.lerp(this.currentSpeed, finalTargetSpeed, dt * CONFIG.speed.acceleration);
 
         if (this.city) this.city.update(this.currentSpeed, dt);
         if (this.car) this.car.update(this.currentSpeed, dt);
+        if (this.obstacles) {
+            this.obstacles.spawn(this.totalDistance); 
+            this.obstacles.update(this.currentSpeed, dt);
+        }
 
         this.updateHUD(dt);
-        this.updateCamera(time);
-
-        // Рендерим через Composer (с Bloom), а не просто renderer
-        this.composer.render();
+        this.updateCamera(time, dt);
+        if (this.composer) this.composer.render();
     }
 }
