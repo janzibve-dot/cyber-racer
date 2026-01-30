@@ -8,19 +8,30 @@ export class Car {
         this.mesh = new THREE.Group();
         this.model = null;
         this.targetX = 0;
-        this.sideSpeed = 35;
+        
+        // ПРАВКА: Увеличил скорость бокового смещения с 35 до 50
+        this.sideSpeed = 50; 
+        
         this.isNitro = false;
         this.isBraking = false;
+        
+        // Огни заднего хода
+        this.brakeLights = [];
 
         this.loadModel();
         this.initControls();
+        this.initLights(); // Добавляем свет
         
-        // Позиция машины
         this.mesh.position.set(0, 0.8, -5.5); 
         this.scene.add(this.mesh);
     }
 
     loadModel() {
+        // Загрузка карты отражений (нужен файл assets/images/env.jpg)
+        const texLoader = new THREE.TextureLoader();
+        const envMap = texLoader.load('assets/images/env.jpg');
+        envMap.mapping = THREE.EquirectangularReflectionMapping;
+
         const loader = new GLTFLoader();
         loader.load('assets/models/Car2.glb', (gltf) => {
             this.model = gltf.scene;
@@ -29,9 +40,18 @@ export class Car {
             const center = box.getCenter(new THREE.Vector3());
             this.model.position.sub(center);
 
-            // Масштаб 3.8 (как и просил ранее)
             this.model.scale.set(3.8, 3.8, 3.8); 
             this.model.rotation.y = 0; 
+
+            // ПРАВКА: Применяем отражения ко всем деталям машины
+            this.model.traverse((child) => {
+                if (child.isMesh) {
+                    child.material.envMap = envMap;
+                    child.material.envMapIntensity = 1.5; // Сила отражения
+                    child.material.metalness = 0.9;       // Делаем металл зеркальным
+                    child.material.roughness = 0.1;       // Очень гладкая поверхность
+                }
+            });
 
             this.mesh.add(this.model);
         }, undefined, (e) => this.createPlaceholder());
@@ -41,6 +61,20 @@ export class Car {
         const geo = new THREE.BoxGeometry(2, 0.8, 4);
         const mat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, wireframe: true });
         this.mesh.add(new THREE.Mesh(geo, mat));
+    }
+
+    initLights() {
+        // Создаем два красных источника света сзади (левый и правый)
+        const lightL = new THREE.PointLight(0xff0000, 0.5, 10);
+        const lightR = new THREE.PointLight(0xff0000, 0.5, 10);
+        
+        // Позиция огней (подбираем под задний бампер)
+        lightL.position.set(-0.8, 0.5, 2.5);
+        lightR.position.set(0.8, 0.5, 2.5);
+
+        this.mesh.add(lightL);
+        this.mesh.add(lightR);
+        this.brakeLights.push(lightL, lightR);
     }
 
     initControls() {
@@ -67,17 +101,17 @@ export class Car {
         this.isNitro = this.keys.up;
         this.isBraking = this.keys.down;
 
+        // ПРАВКА: Логика стоп-сигналов
+        const intensity = this.isBraking ? 5.0 : 0.5; // Ярко вспыхивают при торможении
+        this.brakeLights.forEach(l => l.intensity = intensity);
+
         const limit = (CONFIG.road.width / 2) - 5.0;
         this.targetX = Math.max(-limit, Math.min(limit, this.targetX));
         
-        // Плавность поворота (0.05 - "тяжелая" машина)
-        this.mesh.position.x += (this.targetX - this.mesh.position.x) * 0.05;
+        // ПРАВКА: Увеличил плавность с 0.05 до 0.1 (машина поворачивает в 2 раза быстрее)
+        this.mesh.position.x += (this.targetX - this.mesh.position.x) * 0.1;
         
-        // ПРАВКА: Убрал наклон (rotation.z)
         this.mesh.rotation.z = 0; 
-
-        // ПРАВКА: Убрал cornerLift (компенсацию высоты), так как нет наклона
-        // Оставил только легкое покачивание двигателя
         this.mesh.position.y = 0.8 + Math.sin(Date.now() * 0.005) * 0.05;
     }
 }
