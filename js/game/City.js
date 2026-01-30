@@ -154,7 +154,8 @@ export class City {
         const tex = this.windowTextures[Math.floor(Math.random() * this.windowTextures.length)].clone();
         tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, h / 30);
         const mesh = new THREE.Mesh(new THREE.BoxGeometry(40, h, 50), new THREE.MeshStandardMaterial({ 
-            color: 0x888888, map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 1.5 
+            color: 0x888888, map: tex, emissive: 0xffffff, emissiveMap: tex, 
+            emissiveIntensity: 0.4 // СНИЖЕНО: Было 1.5, теперь 0.4
         }));
         mesh.userData = { type: 'building' };
         mesh.position.set(x, h/2, z);
