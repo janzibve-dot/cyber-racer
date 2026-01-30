@@ -9,25 +9,22 @@ export class Car {
         this.model = null;
         this.targetX = 0;
         
-        // ПРАВКА: Увеличил скорость бокового смещения с 35 до 50
-        this.sideSpeed = 50; 
+        // Увеличиваем скорость реакции, так как машина стала легче
+        this.sideSpeed = 60; 
         
         this.isNitro = false;
         this.isBraking = false;
-        
-        // Огни заднего хода
         this.brakeLights = [];
 
         this.loadModel();
         this.initControls();
-        this.initLights(); // Добавляем свет
+        this.initLights();
         
-        this.mesh.position.set(0, 0.8, -5.5); 
+        this.mesh.position.set(0, 0.4, -5.5); // Опустили ниже (0.4), так как машина меньше
         this.scene.add(this.mesh);
     }
 
     loadModel() {
-        // Загрузка карты отражений (нужен файл assets/images/env.jpg)
         const texLoader = new THREE.TextureLoader();
         const envMap = texLoader.load('assets/images/env.jpg');
         envMap.mapping = THREE.EquirectangularReflectionMapping;
@@ -40,16 +37,16 @@ export class Car {
             const center = box.getCenter(new THREE.Vector3());
             this.model.position.sub(center);
 
-            this.model.scale.set(3.8, 3.8, 3.8); 
+            // ПРАВКА: Уменьшил масштаб в 2 раза (было 3.8 -> 1.9)
+            this.model.scale.set(1.9, 1.9, 1.9); 
             this.model.rotation.y = 0; 
 
-            // ПРАВКА: Применяем отражения ко всем деталям машины
             this.model.traverse((child) => {
                 if (child.isMesh) {
                     child.material.envMap = envMap;
-                    child.material.envMapIntensity = 1.5; // Сила отражения
-                    child.material.metalness = 0.9;       // Делаем металл зеркальным
-                    child.material.roughness = 0.1;       // Очень гладкая поверхность
+                    child.material.envMapIntensity = 2.0; // Усилил отражения
+                    child.material.metalness = 1.0;
+                    child.material.roughness = 0.0;
                 }
             });
 
@@ -58,19 +55,18 @@ export class Car {
     }
 
     createPlaceholder() {
-        const geo = new THREE.BoxGeometry(2, 0.8, 4);
+        const geo = new THREE.BoxGeometry(1, 0.4, 2);
         const mat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, wireframe: true });
         this.mesh.add(new THREE.Mesh(geo, mat));
     }
 
     initLights() {
-        // Создаем два красных источника света сзади (левый и правый)
-        const lightL = new THREE.PointLight(0xff0000, 0.5, 10);
-        const lightR = new THREE.PointLight(0xff0000, 0.5, 10);
+        // Огни стали ближе к центру, так как машина меньше
+        const lightL = new THREE.PointLight(0xff0000, 0.5, 8);
+        const lightR = new THREE.PointLight(0xff0000, 0.5, 8);
         
-        // Позиция огней (подбираем под задний бампер)
-        lightL.position.set(-0.8, 0.5, 2.5);
-        lightR.position.set(0.8, 0.5, 2.5);
+        lightL.position.set(-0.4, 0.3, 1.2); // Скорректированы координаты
+        lightR.position.set(0.4, 0.3, 1.2);
 
         this.mesh.add(lightL);
         this.mesh.add(lightR);
@@ -83,7 +79,8 @@ export class Car {
         window.addEventListener('keyup', (e) => this.updateKeys(e.code, false));
         window.addEventListener('mousemove', (e) => {
             if (!this.model) return;
-            this.targetX = ((e.clientX / window.innerWidth) * 2 - 1) * (CONFIG.road.width * 0.35);
+            // Ограничиваем движение мыши шириной дороги
+            this.targetX = ((e.clientX / window.innerWidth) * 2 - 1) * (CONFIG.road.width * 0.4);
         });
     }
 
@@ -101,17 +98,17 @@ export class Car {
         this.isNitro = this.keys.up;
         this.isBraking = this.keys.down;
 
-        // ПРАВКА: Логика стоп-сигналов
-        const intensity = this.isBraking ? 5.0 : 0.5; // Ярко вспыхивают при торможении
+        const intensity = this.isBraking ? 5.0 : 0.5; 
         this.brakeLights.forEach(l => l.intensity = intensity);
 
-        const limit = (CONFIG.road.width / 2) - 5.0;
+        // ПРАВКА: Лимит движения. Дорога 40, пол-дороги 20. Машина 1.5 шириной.
+        // Оставляем запас 2.0 от края.
+        const limit = (CONFIG.road.width / 2) - 3.0;
         this.targetX = Math.max(-limit, Math.min(limit, this.targetX));
         
-        // ПРАВКА: Увеличил плавность с 0.05 до 0.1 (машина поворачивает в 2 раза быстрее)
         this.mesh.position.x += (this.targetX - this.mesh.position.x) * 0.1;
         
         this.mesh.rotation.z = 0; 
-        this.mesh.position.y = 0.8 + Math.sin(Date.now() * 0.005) * 0.05;
+        this.mesh.position.y = 0.4 + Math.sin(Date.now() * 0.005) * 0.02;
     }
 }
