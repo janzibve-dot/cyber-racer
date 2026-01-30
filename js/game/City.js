@@ -14,19 +14,18 @@ export class City {
 
         // Таймер для анимации окон
         this.windowTimer = 0;
+        this.currentTexIndex = 0; // Индекс текущей обновляемой текстуры
 
         this.initResources();
-        this.initSharedGeometry(); // ОПТИМИЗАЦИЯ
+        this.initSharedGeometry();
         this.initRoad();
         this.initSky();
         this.initBuildings();
     }
 
     initSharedGeometry() {
-        // Создаем геометрию ОДИН раз и используем везде
         this.poleGeo = new THREE.CylinderGeometry(0.5, 0.8, 25, 6);
         this.poleMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-        
         this.armGeo = new THREE.BoxGeometry(10, 0.5, 0.5);
         this.lampGeo = new THREE.BoxGeometry(2, 0.5, 4);
         this.lampMat = new THREE.MeshBasicMaterial({ color: 0x00f3ff });
@@ -45,18 +44,17 @@ export class City {
         ctxNorm.putImageData(imgData, 0, 0);
         this.normalMap = new THREE.CanvasTexture(canvasNorm);
 
-        // 2. Текстуры окон (Canvas contexts сохраняем для анимации)
+        // 2. Текстуры окон
         this.windowTextures = [];
-        this.windowContexts = []; // Сохраняем контексты для обновления
+        this.windowContexts = []; 
         this.holoTextures = []; 
 
         for (let i = 0; i < 4; i++) {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 128;
             const ctx = canvas.getContext('2d');
-            this.windowContexts.push(ctx); // Сохраняем
-            
-            this.drawWindows(ctx); // Рисуем первый раз
+            this.windowContexts.push(ctx); 
+            this.drawWindows(ctx); 
 
             const tex = new THREE.CanvasTexture(canvas);
             tex.magFilter = THREE.NearestFilter;
@@ -84,7 +82,6 @@ export class City {
 
         for (let y = 10; y < 120; y += 12) {
             for (let x = 8; x < 56; x += 10) {
-                // ПРАВКА: Вероятность включенного окна
                 if (Math.random() > 0.4) {
                     const isAlt = Math.random() < 0.05; 
                     ctx.fillStyle = '#' + (isAlt ? altColor.getHexString() : baseColor.getHexString());
@@ -126,9 +123,6 @@ export class City {
 
         if (isCity) {
             const isMega = (this.spawnCounter % 50 === 0);
-            
-            // ПРАВКА: Защита от спавна на дороге
-            // Генерируем число. Если оно попадает в зону дороги (-25..25), сдвигаем его.
             let xLeft = -45 - Math.random() * 20; 
             let xRight = 45 + Math.random() * 20;
 
@@ -139,50 +133,44 @@ export class City {
             const b2 = this.createBuilding(xRight, z, isMega);
             if (!isMega && Math.random() > 0.5) this.createBridge(b1, b2);
         } else {
-            this.createRoadProp(-30, z); // Фиксированные позиции фонарей
+            this.createRoadProp(-30, z);
             this.createRoadProp(30, z);
         }
     }
 
     createRoadProp(x, z) {
-        // ОПТИМИЗАЦИЯ: Используем this.poleGeo, а не new Geometry каждый раз
         const isLight = Math.random() > 0.4; 
         const group = new THREE.Group();
         group.position.set(x, 0, z);
         group.userData = { type: 'prop' };
 
         if (isLight) {
-            const pole = new THREE.Mesh(this.poleGeo, this.poleMat); // Reuse
+            const pole = new THREE.Mesh(this.poleGeo, this.poleMat);
             pole.position.y = 12.5;
             group.add(pole);
 
-            const arm = new THREE.Mesh(this.armGeo, this.poleMat); // Reuse
+            const arm = new THREE.Mesh(this.armGeo, this.poleMat);
             arm.position.set(x > 0 ? -5 : 5, 25, 0); 
             group.add(arm);
 
-            const lamp = new THREE.Mesh(this.lampGeo, this.lampMat); // Reuse
+            const lamp = new THREE.Mesh(this.lampGeo, this.lampMat);
             lamp.position.set(x > 0 ? -9 : 9, 24.5, 0); 
             group.add(lamp);
 
-            // Свет оставляем индивидуальным, его нельзя инстансировать
             const pl = new THREE.PointLight(0x00f3ff, 2, 40);
             pl.position.set(0, -2, 0);
             lamp.add(pl);
         } else {
-            // Щиты оставим как есть, там разные текстуры
             const pole = new THREE.Mesh(this.poleGeo, this.poleMat);
             pole.position.y = 7.5;
-            pole.scale.y = 0.6; // Масштабируем готовую геометрию
+            pole.scale.y = 0.6;
             group.add(pole);
-            // ... (экран щита остается уникальным из-за текстур)
         }
-
         this.scene.add(group);
         this.buildings.push(group);
     }
 
     createBridge(b1, b2) {
-        // ... (код моста без изменений для краткости)
         const dx = b2.position.x - b1.position.x;
         const dist = Math.sqrt(dx*dx);
         const h = Math.min(b1.position.y, b2.position.y) + 5; 
@@ -196,7 +184,6 @@ export class City {
     }
 
     createBuilding(x, z, isMega) {
-        // ... (код здания без изменений, он был хорош)
         const h = (isMega ? 150 : 50) + Math.random() * 100;
         const tex = this.windowTextures[Math.floor(Math.random() * this.windowTextures.length)];
         const geo = new THREE.BoxGeometry(40, h, 50);
@@ -217,22 +204,32 @@ export class City {
         this.roadGrid.position.z += dist;
         if (this.roadGrid.position.z > 0) this.roadGrid.position.z = -200;
 
-        // ПРАВКА: Анимация окон (раз в 1 секунду)
+        // ПРАВКА: Оптимизированное обновление окон
+        // Обновляем только ОДНУ текстуру каждые 0.2 секунды
         this.windowTimer += dt;
-        if (this.windowTimer > 1.0) {
+        if (this.windowTimer > 0.2) { 
             this.windowTimer = 0;
-            // Обновляем текстуры
-            this.windowContexts.forEach((ctx, i) => {
-                this.drawWindows(ctx); // Перерисовываем
-                this.windowTextures[i].needsUpdate = true; // Сообщаем Three.js
-            });
+            
+            // Берем текущий индекс
+            const idx = this.currentTexIndex;
+            
+            // Перерисовываем только один контекст
+            this.drawWindows(this.windowContexts[idx]);
+            this.windowTextures[idx].needsUpdate = true;
+            
+            // Переключаемся на следующую текстуру (циклично 0 -> 1 -> 2 -> 3 -> 0)
+            this.currentTexIndex = (this.currentTexIndex + 1) % this.windowTextures.length;
         }
 
         this.buildings.forEach(b => {
             b.position.z += dist;
             if (b.position.z > 50) {
                 b.position.z -= this.worldLength;
-                // Респаун логика...
+                if (b.userData.type === 'building') {
+                    const newH = 50 + Math.random() * 100;
+                    b.scale.y = newH / b.geometry.parameters.height;
+                    b.position.y = newH / 2;
+                }
             }
         });
     }
