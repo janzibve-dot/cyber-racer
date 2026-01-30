@@ -4,7 +4,7 @@ import { CONFIG } from './Config.js';
 export class City {
     constructor(scene) {
         this.scene = scene;
-        this.buildings = [];
+        this.buildings = []; // Здесь теперь храним и дома, и фонари
         this.colors = CONFIG.colors.palette;
 
         this.spawnCounter = 0;
@@ -30,8 +30,11 @@ export class City {
         this.normalMap.wrapS = THREE.RepeatWrapping; 
         this.normalMap.wrapT = THREE.RepeatWrapping;
 
-        // 2. Текстуры окон
+        // 2. Текстуры окон и Рекламы
         this.windowTextures = [];
+        this.holoTextures = []; // Сохраняем и для билбордов
+
+        // Окна
         for (let i = 0; i < 4; i++) {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 128;
@@ -53,6 +56,24 @@ export class City {
             const tex = new THREE.CanvasTexture(canvas);
             tex.magFilter = THREE.NearestFilter;
             this.windowTextures.push(tex);
+        }
+
+        // Реклама (для щитов)
+        for (let i = 0; i < 4; i++) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const c = this.colors[Math.floor(Math.random()*this.colors.length)];
+            const color = '#' + new THREE.Color(c).getHexString();
+            
+            ctx.clearRect(0,0,128,64);
+            ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.strokeRect(2,2,124,60);
+            ctx.fillStyle = color; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center';
+            const words = ["NEON", "RACE", "BUY", "CYBER"];
+            ctx.fillText(words[i%4], 64, 40);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            this.holoTextures.push(tex);
         }
     }
 
@@ -101,7 +122,6 @@ export class City {
     }
 
     initBuildings() {
-        // ВЕРНУЛ: 40 зданий с шагом 50. Итого 2000 метров.
         for (let i = 0; i < 40; i++) {
             this.spawnPair(-i * 50);
         }
@@ -109,18 +129,101 @@ export class City {
 
     spawnPair(z) {
         this.spawnCounter++;
-        const isMega = (this.spawnCounter % 50 === 0);
-
-        const xLeft = -45 - Math.random() * 5; 
-        const xRight = 45 + Math.random() * 5;
         
-        const b1 = this.createBuilding(xLeft, z, isMega);
-        const b2 = this.createBuilding(xRight, z, isMega);
+        // ЛОГИКА ЗОН: 15 блоков города, потом 5 блоков пустоши (трассы)
+        const cycle = this.spawnCounter % 20;
+        const isCity = cycle < 15; // 75% город, 25% трасса
 
-        // Мосты почаще (но не на каждом шаге, так как шаг теперь большой)
-        if (!isMega && Math.random() > 0.5) { 
-             this.createBridge(b1, b2);
+        if (isCity) {
+            // ГОРОД (как раньше)
+            const isMega = (this.spawnCounter % 50 === 0);
+            const xLeft = -45 - Math.random() * 5; 
+            const xRight = 45 + Math.random() * 5;
+            
+            const b1 = this.createBuilding(xLeft, z, isMega);
+            const b2 = this.createBuilding(xRight, z, isMega);
+
+            if (!isMega && Math.random() > 0.5) { 
+                 this.createBridge(b1, b2);
+            }
+        } else {
+            // ТРАССА (Фонари и Щиты)
+            // Ставим на тех же линиях (-45, 45), чтобы сохранить коридор
+            this.createRoadProp(-45, z);
+            this.createRoadProp(45, z);
         }
+    }
+
+    createRoadProp(x, z) {
+        // Выбираем: Фонарь или Билборд
+        const isLight = Math.random() > 0.4; // 60% фонари
+        
+        const group = new THREE.Group();
+        group.position.set(x, 0, z);
+        // ВАЖНО: Помечаем, что это не здание, чтобы не скейлить в update
+        group.userData = { type: 'prop' };
+
+        if (isLight) {
+            // --- КИБЕР-ФОНАРЬ ---
+            const poleH = 25;
+            // Столб
+            const poleGeo = new THREE.CylinderGeometry(0.5, 0.8, poleH, 6);
+            const poleMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.5 });
+            const pole = new THREE.Mesh(poleGeo, poleMat);
+            pole.position.y = poleH / 2;
+            group.add(pole);
+
+            // Изогнутая часть (Горизонтальная перекладина)
+            const armGeo = new THREE.BoxGeometry(10, 0.5, 0.5);
+            const arm = new THREE.Mesh(armGeo, poleMat);
+            arm.position.set(x > 0 ? -5 : 5, poleH, 0); // Направляем к дороге
+            group.add(arm);
+
+            // Лампа (Неон)
+            const lightGeo = new THREE.BoxGeometry(2, 0.5, 4);
+            const lightColor = 0x00f3ff; // Голубой неон
+            const lightMat = new THREE.MeshBasicMaterial({ color: lightColor });
+            const lamp = new THREE.Mesh(lightGeo, lightMat);
+            lamp.position.set(x > 0 ? -9 : 9, poleH - 0.5, 0); // На конце руки
+            group.add(lamp);
+
+            // Пятно света (PointLight)
+            const pointLight = new THREE.PointLight(lightColor, 2, 40);
+            pointLight.position.set(0, -2, 0);
+            lamp.add(pointLight);
+
+        } else {
+            // --- РЕКЛАМНЫЙ ЩИТ ---
+            const poleH = 15;
+            // Ножка
+            const poleGeo = new THREE.CylinderGeometry(0.5, 0.5, poleH, 6);
+            const poleMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const pole = new THREE.Mesh(poleGeo, poleMat);
+            pole.position.y = poleH / 2;
+            group.add(pole);
+
+            // Экран
+            const w = 15; const h = 8;
+            const screenGeo = new THREE.PlaneGeometry(w, h);
+            const tex = this.holoTextures[Math.floor(Math.random() * this.holoTextures.length)];
+            const screenMat = new THREE.MeshBasicMaterial({ 
+                map: tex, 
+                side: THREE.DoubleSide, 
+                transparent: true, 
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending
+            });
+            const screen = new THREE.Mesh(screenGeo, screenMat);
+            screen.position.y = poleH + h/2;
+            // Поворачиваем к игроку (перпендикулярно дороге) или вдоль? 
+            // Лучше немного под углом к дороге
+            screen.rotation.y = x > 0 ? -Math.PI / 4 : Math.PI / 4;
+            group.add(screen);
+        }
+
+        this.scene.add(group);
+        this.buildings.push(group);
+        return group;
     }
 
     createBridge(b1, b2) {
@@ -131,7 +234,6 @@ export class City {
         const geo = new THREE.CylinderGeometry(1, 1, dist, 8);
         geo.rotateZ(Math.PI / 2);
         
-        // Цвета (не яркие)
         const bridgeColors = [0x555555, 0x334455, 0x554433, 0x444444, 0x223322];
         const color = bridgeColors[Math.floor(Math.random() * bridgeColors.length)];
         
@@ -139,6 +241,9 @@ export class City {
         const mesh = new THREE.Mesh(geo, mat);
         
         mesh.position.set((b1.position.x + b2.position.x)/2, h, b1.position.z);
+        
+        mesh.userData = { type: 'bridge' }; // Помечаем мост
+        
         this.scene.add(mesh);
         this.buildings.push(mesh);
     }
@@ -146,7 +251,7 @@ export class City {
     createBuilding(x, z, isMega) {
         const h = (isMega ? 150 : 50) + Math.random() * 100;
         const w = 40; 
-        const d = 50; // ВЕРНУЛ: Глубина 50 (массивные здания)
+        const d = 50; 
 
         const tex = this.windowTextures[Math.floor(Math.random() * this.windowTextures.length)];
         const currentTex = tex.clone();
@@ -169,8 +274,9 @@ export class City {
         });
         
         const mesh = new THREE.Mesh(geo, matBody);
+        // ПОМЕЧАЕМ КАК ЗДАНИЕ
+        mesh.userData = { type: 'building', baseH: h }; 
 
-        // Вернул обводку
         const colorIndex = Math.floor(Math.random() * this.colors.length);
         const baseColorHex = this.colors[colorIndex];
         const edges = new THREE.EdgesGeometry(geo);
@@ -218,11 +324,18 @@ export class City {
 
         this.buildings.forEach(b => {
             b.position.z += dist;
+            
             if (b.position.z > 50) {
                 b.position.z = -1950;
-                const newH = 50 + Math.random() * 100;
-                b.scale.y = newH / b.geometry.parameters.height;
-                b.position.y = newH / 2;
+                
+                // ЛОГИКА РЕСПАУНА
+                if (b.userData.type === 'building') {
+                    // Здания меняем по высоте для разнообразия
+                    const newH = 50 + Math.random() * 100;
+                    b.scale.y = newH / b.geometry.parameters.height;
+                    b.position.y = newH / 2;
+                } 
+                // Фонари, щиты и мосты ('prop', 'bridge') просто переносим, не меняя размер
             }
         });
     }
