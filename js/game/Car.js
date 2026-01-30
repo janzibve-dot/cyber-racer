@@ -16,7 +16,7 @@ export class Car {
         this.loadModel();
         this.initControls();
         
-        // СДВИГ НАЗАД: Позиция Z изменена на -7.5 (было -5)
+        // Машина отодвинута назад на 7.5 единиц
         this.mesh.position.set(0, 0.6, -7.5); 
         this.scene.add(this.mesh);
     }
@@ -35,14 +35,14 @@ export class Car {
             this.model.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
-                    if (child.material) child.material.emissiveIntensity = 0.4;
+                    if (child.material) child.material.emissiveIntensity = 0.5;
                 }
             });
 
-            // УВЕЛИЧЕНИЕ: Масштаб теперь 1.3
-            this.model.scale.set(1.3, 1.3, 1.3); 
-            // РАЗВОРОТ: Если едет задом, используй Math.PI. Если передом - 0.
-            this.model.rotation.y = Math.PI; 
+            // МАСШТАБ: Увеличен до 1.5
+            this.model.scale.set(1.5, 1.5, 1.5); 
+            // РАЗВОРОТ: 0 (если снова задом - смени на Math.PI)
+            this.model.rotation.y = 0; 
 
             this.mesh.add(this.model);
         }, undefined, (error) => {
