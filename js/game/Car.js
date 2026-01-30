@@ -16,8 +16,8 @@ export class Car {
         this.loadModel();
         this.initControls();
         
-        // Машина отодвинута назад на 7.5 единиц
-        this.mesh.position.set(0, 0.6, -7.5); 
+        // Позиция: Z = -8 (чуть дальше назад для обзора)
+        this.mesh.position.set(0, 0.6, -8); 
         this.scene.add(this.mesh);
     }
 
@@ -26,6 +26,7 @@ export class Car {
         loader.load('assets/models/Car2.glb', (gltf) => {
             this.model = gltf.scene;
 
+            // Автоматическое выравнивание модели
             const box = new THREE.Box3().setFromObject(this.model);
             const center = box.getCenter(new THREE.Vector3());
             this.model.position.x += (this.model.position.x - center.x);
@@ -35,17 +36,23 @@ export class Car {
             this.model.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
-                    if (child.material) child.material.emissiveIntensity = 0.5;
+                    if (child.material) {
+                        child.material.emissiveIntensity = 0.5;
+                        child.material.side = THREE.DoubleSide; // Чтобы не было прозрачных дыр
+                    }
                 }
             });
 
-            // МАСШТАБ: Увеличен до 1.5
-            this.model.scale.set(1.5, 1.5, 1.5); 
-            // РАЗВОРОТ: 0 (если снова задом - смени на Math.PI)
-            this.model.rotation.y = 0; 
+            // МАСШТАБ: Увеличен до 2.5 (был 1.5)
+            this.model.scale.set(2.5, 2.5, 2.5); 
+            
+            // РАЗВОРОТ: Установлен на 180 градусов (Math.PI)
+            this.model.rotation.y = Math.PI; 
 
             this.mesh.add(this.model);
+            console.log("Car2.glb Loaded and Adjusted");
         }, undefined, (error) => {
+            console.error("Model Error:", error);
             this.createPlaceholder();
         });
     }
@@ -60,6 +67,7 @@ export class Car {
         this.keys = { left: false, right: false, up: false, down: false };
         window.addEventListener('keydown', (e) => this.updateKeys(e.code, true));
         window.addEventListener('keyup', (e) => this.updateKeys(e.code, false));
+        
         window.addEventListener('mousemove', (e) => {
             const ratio = (e.clientX / window.innerWidth) * 2 - 1;
             this.targetX = ratio * (CONFIG.road.width * 0.35); 
@@ -81,10 +89,15 @@ export class Car {
 
         const roadLimit = (CONFIG.road.width / 2) - 3.5;
         this.targetX = Math.max(-roadLimit, Math.min(roadLimit, this.targetX));
-        this.mesh.position.x += (this.targetX - this.mesh.position.x) * 0.08;
-        this.mesh.position.y = 0.6 + Math.sin(Date.now() * 0.01) * 0.03;
+        
+        // Сглаженное движение (0.1)
+        this.mesh.position.x += (this.targetX - this.mesh.position.x) * 0.1;
+        
+        // Эффект парения
+        this.mesh.position.y = 0.6 + Math.sin(Date.now() * 0.005) * 0.05;
 
-        this.mesh.rotation.z += ((this.mesh.position.x - this.targetX) * 0.2 - this.mesh.rotation.z) * 0.1;
-        this.mesh.rotation.y = -(this.mesh.position.x - this.targetX) * 0.1;
+        // Наклон кузова
+        const tiltZ = (this.mesh.position.x - this.targetX) * 0.2;
+        this.mesh.rotation.z += (tiltZ - this.mesh.rotation.z) * 0.1;
     }
 }
