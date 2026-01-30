@@ -1,14 +1,13 @@
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CONFIG } from './Config.js';
 
 export class Car {
     constructor(scene) {
         this.scene = scene;
-        this.mesh = new THREE.Group(); // Контейнер для модели
-        this.model = null; // Здесь будет сама GLB модель
+        this.mesh = new THREE.Group();
+        this.model = null;
         
-        // Физика и управление
         this.targetX = 0; 
         this.sideSpeed = 45; 
         this.isNitro = false;
@@ -23,31 +22,28 @@ export class Car {
 
     loadModel() {
         const loader = new GLTFLoader();
-        // Путь к твоей модели на GitHub
         loader.load('assets/models/car.glb', (gltf) => {
             this.model = gltf.scene;
-            
-            // Настройка материалов модели для стиля Киберпанк
             this.model.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
-                    // Если хочешь, чтобы модель немного светилась:
-                    if (child.material) {
-                        child.material.emissiveIntensity = 0.5;
-                    }
+                    if (child.material) child.material.emissiveIntensity = 0.5;
                 }
             });
-
-            // Масштабируем модель, если она слишком большая или маленькая
             this.model.scale.set(1.2, 1.2, 1.2); 
-            // Разворачиваем модель передом к дороге (зависит от осей твоей модели)
             this.model.rotation.y = Math.PI; 
-
             this.mesh.add(this.model);
-            console.log("Cyber-Car Loaded!");
         }, undefined, (error) => {
-            console.error("Ошибка загрузки модели:", error);
+            console.warn("Модель car.glb не найдена в assets/models/. Использую временный куб.");
+            this.createPlaceholder();
         });
+    }
+
+    createPlaceholder() {
+        const geo = new THREE.BoxGeometry(2, 0.8, 4);
+        const mat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, wireframe: true });
+        const box = new THREE.Mesh(geo, mat);
+        this.mesh.add(box);
     }
 
     initControls() {
@@ -79,12 +75,9 @@ export class Car {
         this.targetX = Math.max(-roadLimit, Math.min(roadLimit, this.targetX));
 
         this.mesh.position.x += (this.targetX - this.mesh.position.x) * 0.15;
-
-        // Эффект парения
         const hover = Math.sin(Date.now() * 0.01) * 0.04;
         this.mesh.position.y = 0.6 + hover;
 
-        // Наклоны модели при поворотах
         const tiltZ = (this.mesh.position.x - this.targetX) * 0.3;
         this.mesh.rotation.z += (tiltZ - this.mesh.rotation.z) * 0.1;
         this.mesh.rotation.y = -(this.mesh.position.x - this.targetX) * 0.2;
