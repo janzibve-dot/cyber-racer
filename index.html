@@ -32,6 +32,10 @@
             <div class="hud-label">SPD</div>
             <div id="speed-counter" class="hud-value">0</div>
         </div>
+        <div class="hud-box">
+            <div class="hud-label">MODE</div>
+            <div id="mode-display" class="hud-value">RACE</div>
+        </div>
     </div>
 
     <div id="main-menu" class="mech-overlay">
@@ -47,13 +51,13 @@
             <div class="screen-inner scanlines">
                 <div class="controls-wrapper">
                     <div class="control-group">
-                        <span class="key-bind">[W A S D]</span>
-                        <span id="desc-move" class="action-name">ДВИЖЕНИЕ</span>
+                        <span class="key-bind">[W] NITRO [S] BRAKE</span>
+                        <span class="action-name">СКОРОСТЬ / ТОРМОЗ</span>
                     </div>
                     <div class="control-divider"></div>
                     <div class="control-group">
-                        <span class="key-bind">[MOUSE]</span>
-                        <span id="desc-look" class="action-name">ОБЗОР / РУЛЬ</span>
+                        <span class="key-bind">[A D] / [MOUSE]</span>
+                        <span class="action-name">РУЛЕВОЕ УПРАВЛЕНИЕ</span>
                     </div>
                 </div>
             </div>
@@ -65,17 +69,20 @@
             <div class="circuit-bg"></div>
             <div class="mech-buttons-row">
                 <button id="btn-start" class="mech-btn unstable-neon">
-                    <span>НАЧАТЬ ГОНКУ</span>
+                    <span>БЕСКОНЕЧНЫЙ ЗАЕЗД</span>
+                </button>
+                <button id="btn-laps" class="mech-btn unstable-neon">
+                    <span>ГОНКА НА КРУГИ</span>
                 </button>
                 <button id="btn-lang" class="mech-btn unstable-neon">
                     <span>ЯЗЫК: RU</span>
                 </button>
             </div>
         </div>
-        <div class="credits">GOLD VERSION 2.1</div>
+        <div class="credits">GOLD VERSION 2.2</div>
     </div>
 
-    <script src="js/ui.js"></script>
+    <script type="module" src="js/ui.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
