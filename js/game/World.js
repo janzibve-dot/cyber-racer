@@ -5,28 +5,39 @@ import { Obstacles } from './Obstacles.js';
 import { CONFIG } from './Config.js';
 
 export class World {
-    constructor(containerId) {
+    constructor(containerId, loadingManager) {
         this.container = document.getElementById(containerId);
+        this.loadingManager = loadingManager; // Сохраняем менеджер
+
         this.uiDist = document.getElementById('dist-counter');
         this.uiSpeed = document.getElementById('speed-counter');
         
         this.width = window.innerWidth;
         this.height = window.innerHeight;
-        this.isPaused = false;
-        this.currentSpeed = CONFIG.speed.start;
+        
+        this.isPaused = true; // Игра стоит на паузе при загрузке
+        this.gameStarted = false; // Флаг, что кнопка Start нажата
+
+        this.currentSpeed = 0; // Скорость 0, пока в меню
         this.targetSpeed = CONFIG.speed.max;
         this.totalDistance = 0;
 
+        // FPS Stats
+        this.stats = new Stats();
+        this.stats.showPanel(0); // 0: fps
+        this.stats.dom.style.cssText = 'position:absolute;top:0px;left:0px;z-index:100;';
+        document.body.appendChild(this.stats.dom);
+
         this.initScene();
         this.city = new City(this.scene);
-        this.car = new Car(this.scene);
+        this.car = new Car(this.scene, this.loadingManager); // Передаем менеджер в машину
         this.obstacles = new Obstacles(this.scene); 
         
         this.clock = new THREE.Clock();
 
         window.addEventListener('resize', () => this.onResize());
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Escape') {
+            if (e.code === 'Escape' && this.gameStarted) {
                 this.isPaused = !this.isPaused;
                 if (!this.isPaused) this.clock.getDelta(); 
             }
@@ -35,10 +46,20 @@ export class World {
         this.animate();
     }
 
+    // ИСПРАВЛЕНИЕ: Метод старта, который вызывает UI
+    start() {
+        console.log("Game World Started");
+        this.gameStarted = true;
+        this.isPaused = false;
+        this.currentSpeed = CONFIG.speed.start;
+        this.clock.start();
+        if (window.stopRain) window.stopRain(); // Останавливаем дождь из меню
+    }
+
     initScene() {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(CONFIG.colors.sky);
-        this.scene.fog = new THREE.Fog(CONFIG.colors.fog, 20, 150);
+        this.scene.fog = new THREE.Fog(CONFIG.colors.fog, 10, 120); // Плотный туман
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(this.width, this.height);
@@ -46,9 +67,8 @@ export class World {
 
         this.camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, this.width / this.height, 0.1, 1000);
         
-        // ПРАВКА: Камера еще ближе (было 0, 3, 6.5 -> стало 0, 2.5, 5.0)
-        // Это дает эффект "погони" прямо над крышей
-        this.camera.position.set(0, 2.5, 5.0);
+        // ПРАВКА: Камера (0, 2.0, 4.0) — Очень близко
+        this.camera.position.set(0, 2.0, 4.0);
 
         const ambient = new THREE.AmbientLight(0xffffff, 2.0);
         this.scene.add(ambient);
@@ -74,7 +94,19 @@ export class World {
 
     animate() {
         requestAnimationFrame(() => this.animate());
-        if (this.isPaused) return;
+        
+        this.stats.begin(); // Начало замера FPS
+
+        // Если игра на паузе или не начата — рендерим статичный кадр (фон меню)
+        if (this.isPaused && !this.gameStarted) {
+            // Можно добавить медленное вращение камеры вокруг города для красоты в меню
+            if(this.city) this.city.update(10, 0.016); 
+            this.renderer.render(this.scene, this.camera);
+            this.stats.end();
+            return;
+        }
+
+        if (this.isPaused) { this.stats.end(); return; }
 
         const dt = this.clock.getDelta();
 
@@ -86,12 +118,14 @@ export class World {
 
         this.updateHUD(dt); 
         
+        // Слежение камеры
         const carX = this.car.mesh.position.x;
-        const lookX = carX * 0.8; 
-        
-        this.camera.position.x += (carX * 0.5 - this.camera.position.x) * dt * 2;
+        const lookX = carX * 0.7; 
+        this.camera.position.x += (carX * 0.6 - this.camera.position.x) * dt * 3;
         this.camera.lookAt(lookX, 1.5, -50);
 
         this.renderer.render(this.scene, this.camera);
+        
+        this.stats.end(); // Конец замера FPS
     }
 }
