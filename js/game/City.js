@@ -4,15 +4,15 @@ import { CONFIG } from './Config.js';
 export class City {
     constructor(scene) {
         this.scene = scene;
-        this.buildings = []; // Хранит здания, фонари и щиты
+        this.buildings = [];
         this.colors = CONFIG.colors.palette;
 
         this.spawnCounter = 0;
         
         // НАСТРОЙКИ ЦИКЛИЧНОСТИ
-        this.chunkSize = 50;  // Шаг между объектами
-        this.chunkCount = 60; // Количество пар объектов (60 * 50 = 3000 метров)
-        this.worldLength = this.chunkSize * this.chunkCount; // Полная длина круга
+        this.chunkSize = 50;  
+        this.chunkCount = 60; 
+        this.worldLength = this.chunkSize * this.chunkCount; 
 
         this.initResources();
         this.initRoad();
@@ -21,7 +21,7 @@ export class City {
     }
 
     initResources() {
-        // 1. Normal Map
+        // 1. Normal Map (Рельеф бетона/асфальта)
         const canvasNorm = document.createElement('canvas');
         canvasNorm.width = 256; canvasNorm.height = 256;
         const ctxNorm = canvasNorm.getContext('2d');
@@ -34,6 +34,26 @@ export class City {
         this.normalMap = new THREE.CanvasTexture(canvasNorm);
         this.normalMap.wrapS = THREE.RepeatWrapping; 
         this.normalMap.wrapT = THREE.RepeatWrapping;
+
+        // НОВОЕ: Roughness Map (Мокрый асфальт)
+        const canvasRough = document.createElement('canvas');
+        canvasRough.width = 256; canvasRough.height = 256;
+        const ctxRough = canvasRough.getContext('2d');
+        // Заливаем "шумом": Черное = зеркальное (лужа), Белое = матовое (сухо)
+        for(let i=0; i<500; i++) {
+            const gray = Math.floor(Math.random() * 255);
+            ctxRough.fillStyle = `rgb(${gray},${gray},${gray})`;
+            const size = Math.random() * 50 + 10;
+            ctxRough.fillRect(Math.random()*256, Math.random()*256, size, size);
+        }
+        // Размытие, чтобы пятна были плавными
+        ctxRough.filter = 'blur(4px)';
+        ctxRough.drawImage(canvasRough, 0, 0); 
+        
+        this.roughnessMap = new THREE.CanvasTexture(canvasRough);
+        this.roughnessMap.wrapS = THREE.RepeatWrapping;
+        this.roughnessMap.wrapT = THREE.RepeatWrapping;
+
 
         // 2. Текстуры окон
         this.windowTextures = [];
@@ -62,7 +82,7 @@ export class City {
             this.windowTextures.push(tex);
         }
 
-        // 3. Текстуры рекламы (для столбов)
+        // 3. Текстуры рекламы
         for (let i = 0; i < 4; i++) {
             const canvas = document.createElement('canvas');
             canvas.width = 128; canvas.height = 64;
@@ -83,10 +103,25 @@ export class City {
 
     initRoad() {
         const geo = new THREE.PlaneGeometry(CONFIG.road.width, 1000);
-        const mat = new THREE.MeshBasicMaterial({ color: 0x050505 });
+        
+        // НОВОЕ: Материал дороги с отражениями
+        const mat = new THREE.MeshStandardMaterial({ 
+            color: 0x111111,          // Темный асфальт
+            roughnessMap: this.roughnessMap, // Карта пятен
+            roughness: 0.5,           // Базовая шероховатость
+            metalness: 0.6,           // Металличность для отражений
+            normalMap: this.normalMap, // Рельеф
+            normalScale: new THREE.Vector2(0.5, 0.5)
+        });
+        
         this.road = new THREE.Mesh(geo, mat);
         this.road.rotation.x = -Math.PI / 2;
         this.road.position.z = -200;
+        
+        // Настройка повторения текстур на дороге
+        this.normalMap.repeat.set(5, 50);
+        this.roughnessMap.repeat.set(5, 50);
+
         this.scene.add(this.road);
 
         const grid = new THREE.GridHelper(CONFIG.road.width, 4, 0x00f3ff, 0x00f3ff);
@@ -126,7 +161,6 @@ export class City {
     }
 
     initBuildings() {
-        // Создаем 60 пар объектов (3000 метров трассы)
         for (let i = 0; i < this.chunkCount; i++) {
             this.spawnPair(-i * this.chunkSize);
         }
@@ -134,13 +168,10 @@ export class City {
 
     spawnPair(z) {
         this.spawnCounter++;
-        
-        // ЦИКЛ: 15 Город -> 5 Пустошь (Фонари)
         const cyclePos = this.spawnCounter % 20; 
         const isCity = cyclePos < 15;
 
         if (isCity) {
-            // --- ГОРОД ---
             const isMega = (this.spawnCounter % 50 === 0);
             const xLeft = -45 - Math.random() * 5; 
             const xRight = 45 + Math.random() * 5;
@@ -152,22 +183,18 @@ export class City {
                  this.createBridge(b1, b2);
             }
         } else {
-            // --- ПУСТОШЬ (ФОНАРИ И ЩИТЫ) ---
             this.createRoadProp(-45, z);
             this.createRoadProp(45, z);
         }
     }
 
     createRoadProp(x, z) {
-        const isLight = Math.random() > 0.4; // 60% Фонари, 40% Щиты
+        const isLight = Math.random() > 0.4;
         const group = new THREE.Group();
         group.position.set(x, 0, z);
-        
-        // Помечаем тип, чтобы в update не менять их размер
         group.userData = { type: 'prop' };
 
         if (isLight) {
-            // Фонарь
             const poleH = 25;
             const poleGeo = new THREE.CylinderGeometry(0.5, 0.8, poleH, 6);
             const poleMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
@@ -187,12 +214,10 @@ export class City {
             lamp.position.set(x > 0 ? -9 : 9, poleH - 0.5, 0); 
             group.add(lamp);
 
-            // Реальный свет
             const pl = new THREE.PointLight(lightColor, 2, 40);
             pl.position.set(0, -2, 0);
             lamp.add(pl);
         } else {
-            // Рекламный столб
             const poleH = 15;
             const poleGeo = new THREE.CylinderGeometry(0.5, 0.5, poleH, 6);
             const poleMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
@@ -309,22 +334,17 @@ export class City {
         if (this.roadGrid.position.z > 0) this.roadGrid.position.z = -200;
         this.centerLine.material.map.offset.y -= dist * 0.05;
 
-        // ПРАВИЛЬНЫЙ ЦИКЛИЧНЫЙ РЕСПАУН
         this.buildings.forEach(b => {
             b.position.z += dist;
             
-            // Если объект ушел за спину (Z > 50)
             if (b.position.z > 50) {
-                // Переносим его ровно в хвост очереди
-                // Вычитаем длину мира (3000), чтобы сохранить смещение
                 b.position.z -= this.worldLength;
                 
-                // Если это здание, немного меняем его вид для разнообразия
                 if (b.userData.type === 'building') {
                     const newH = 50 + Math.random() * 100;
                     b.scale.y = newH / b.geometry.parameters.height;
                     b.position.y = newH / 2;
-                }
+                } 
             }
         });
     }
