@@ -7,10 +7,9 @@ export class City {
         this.buildings = [];
         this.colors = CONFIG.colors.palette;
 
-        // СЧЕТЧИК ДЛЯ МЕГА-БАШЕН
         this.spawnCounter = 0;
 
-        // ГЕНЕРАЦИЯ РЕСУРСОВ (ВЫПОЛНЯЕТСЯ 1 РАЗ ПРИ СТАРТЕ)
+        // Генерация ресурсов (1 раз)
         this.initResources();
 
         this.initRoad();
@@ -18,9 +17,8 @@ export class City {
         this.initBuildings();
     }
 
-    // --- НОВОЕ: Генерация текстур и карт нормалей ---
     initResources() {
-        // 1. Normal Map (Шум для бетона)
+        // 1. Normal Map (Рельеф бетона)
         const canvasNorm = document.createElement('canvas');
         canvasNorm.width = 256; canvasNorm.height = 256;
         const ctxNorm = canvasNorm.getContext('2d');
@@ -34,7 +32,7 @@ export class City {
         this.normalMap.wrapS = THREE.RepeatWrapping; 
         this.normalMap.wrapT = THREE.RepeatWrapping;
 
-        // 2. Текстуры окон (с 5% красных/оранжевых)
+        // 2. Текстуры окон
         this.windowTextures = [];
         for (let i = 0; i < 4; i++) {
             const canvas = document.createElement('canvas');
@@ -43,12 +41,12 @@ export class City {
             ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, 64, 128);
             
             const baseColor = new THREE.Color(this.colors[Math.floor(Math.random() * this.colors.length)]);
-            const altColor = new THREE.Color(0xff4400); // Оранжевый
+            const altColor = new THREE.Color(0xff4400); 
 
             for (let y = 10; y < 120; y += 12) {
                 for (let x = 8; x < 56; x += 10) {
                     if (Math.random() > 0.3) {
-                        const isAlt = Math.random() < 0.05; // 5% другого цвета
+                        const isAlt = Math.random() < 0.05; 
                         ctx.fillStyle = '#' + (isAlt ? altColor.getHexString() : baseColor.getHexString());
                         ctx.fillRect(x, y, 6, 8);
                     }
@@ -62,7 +60,6 @@ export class City {
 
     initRoad() {
         const geo = new THREE.PlaneGeometry(CONFIG.road.width, 1000);
-        // Оставил твой материал дороги как есть, чтобы не было темно
         const mat = new THREE.MeshBasicMaterial({ color: 0x050505 });
         this.road = new THREE.Mesh(geo, mat);
         this.road.rotation.x = -Math.PI / 2;
@@ -76,7 +73,6 @@ export class City {
         this.scene.add(grid);
         this.roadGrid = grid;
 
-        // Разметка
         const canvas = document.createElement('canvas');
         canvas.width = 64; canvas.height = 512;
         const ctx = canvas.getContext('2d');
@@ -107,23 +103,25 @@ export class City {
     }
 
     initBuildings() {
+        // ЦИКЛ: 40 зданий. ШАГ: 50 метров. ИТОГО: 2000 метров (до горизонта)
         for (let i = 0; i < 40; i++) {
-            this.spawnPair(-i * 25);
+            this.spawnPair(-i * 50);
         }
     }
 
     spawnPair(z) {
         this.spawnCounter++;
-        // ЭФФЕКТ: Мега-Башня каждые 50 спавнов
         const isMega = (this.spawnCounter % 50 === 0);
 
-        const xLeft = -35 - Math.random() * 20; 
-        const xRight = 35 + Math.random() * 20;
+        // ЖЕСТКАЯ ПОЗИЦИЯ X: Чтобы стояли ровно вдоль дороги
+        // Дорога 40. Центр здания на 45. Ширина здания 40. Край здания 25. Зазор 5.
+        // Коррекция randomness, чтобы не было дыр по X
+        const xLeft = -45 - Math.random() * 5; 
+        const xRight = 45 + Math.random() * 5;
         
         const b1 = this.createBuilding(xLeft, z, isMega);
         const b2 = this.createBuilding(xRight, z, isMega);
 
-        // ЭФФЕКТ: Мосты (соединяем здания трубой)
         if (!isMega && Math.random() > 0.7) {
              this.createBridge(b1, b2);
         }
@@ -132,7 +130,6 @@ export class City {
     createBridge(b1, b2) {
         const dx = b2.position.x - b1.position.x;
         const dist = Math.sqrt(dx*dx);
-        // Мост посередине высоты
         const h = Math.min(b1.position.y, b2.position.y) + 5; 
 
         const geo = new THREE.CylinderGeometry(1, 1, dist, 8);
@@ -140,22 +137,20 @@ export class City {
         const mat = new THREE.MeshBasicMaterial({ color: 0x333333 });
         const mesh = new THREE.Mesh(geo, mat);
         
-        // Позиция посередине между зданиями по X
         mesh.position.set((b1.position.x + b2.position.x)/2, h, b1.position.z);
         this.scene.add(mesh);
         this.buildings.push(mesh);
     }
 
     createBuilding(x, z, isMega) {
-        // ЭФФЕКТ: Мега-структуры (в 3 раза больше)
-        const h = (isMega ? 150 : 30) + Math.random() * (isMega ? 100 : 90);
-        const w = (isMega ? 40 : 10) + Math.random() * 20;
-        const d = (isMega ? 40 : 10) + Math.random() * 20;
+        // РАЗМЕРЫ:
+        const h = (isMega ? 150 : 50) + Math.random() * 100;
+        const w = 40; // Широкие, чтобы закрыть фон
+        const d = 50; // ГЛУБИНА 50 == ШАГ СПАВНА 50 (БЕЗ ЗАЗОРОВ)
 
         const colorIndex = Math.floor(Math.random() * this.colors.length);
         const baseColorHex = this.colors[colorIndex];
         
-        // Берем готовую текстуру
         const tex = this.windowTextures[Math.floor(Math.random() * this.windowTextures.length)];
         const currentTex = tex.clone();
         currentTex.needsUpdate = true;
@@ -163,29 +158,27 @@ export class City {
         currentTex.wrapT = THREE.RepeatWrapping;
         currentTex.repeat.set(1, h / 30);
 
-        // ЭФФЕКТ: Normal Map и Свечение (StandardMaterial)
         const geo = new THREE.BoxGeometry(w, h, d);
+        
+        // Яркий материал + Эффекты
         const matBody = new THREE.MeshStandardMaterial({ 
             color: 0x888888,
             map: currentTex,
-            emissive: 0xffffff,       // Чтобы светилось (как просил - ярко)
+            emissive: 0xffffff,
             emissiveMap: currentTex,
-            emissiveIntensity: 1.5,
-            normalMap: this.normalMap, // Рельеф бетона
+            emissiveIntensity: 1.5, // Яркость
+            normalMap: this.normalMap,
             roughness: 0.8,
             metalness: 0.2
         });
         
         const mesh = new THREE.Mesh(geo, matBody);
 
-        // Обводка (оставил как в твоем коде)
         const edges = new THREE.EdgesGeometry(geo);
-        // Для обводки BasicMaterial, чтобы всегда горела
         const matLine = new THREE.LineBasicMaterial({ color: baseColorHex, linewidth: 2 });
         const wires = new THREE.LineSegments(edges, matLine);
         mesh.add(wires);
 
-        // Вторая секция (как в твоем коде)
         if (Math.random() > 0.3) {
             const dGeo = new THREE.BoxGeometry(w+0.2, h, d+0.2, 1, Math.floor(h/5), 1);
             const dEdges = new THREE.EdgesGeometry(dGeo);
@@ -193,21 +186,18 @@ export class City {
             mesh.add(dWires);
         }
 
-        // ЭФФЕКТ: Трубы и вентиляция сбоку
         if (Math.random() > 0.5) {
             const pipeGeo = new THREE.CylinderGeometry(1.5, 1.5, h * 0.9, 8);
             const pipeMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
             const pipe = new THREE.Mesh(pipeGeo, pipeMat);
-            // Сбоку здания
             pipe.position.set(w/2 + 1, 0, 0); 
             mesh.add(pipe);
         }
 
-        // ЭФФЕКТ: Свет на крыше (Маячок)
         const beaconGeo = new THREE.SphereGeometry(1, 8, 8);
         const beaconMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
         const beacon = new THREE.Mesh(beaconGeo, beaconMat);
-        beacon.position.y = h/2; // На крыше
+        beacon.position.y = h/2;
         mesh.add(beacon);
 
         const light = new THREE.PointLight(0xff0000, 2, 50);
@@ -229,15 +219,15 @@ export class City {
 
         this.buildings.forEach(b => {
             b.position.z += dist;
-            if (b.position.z > 20) {
-                b.position.z = -800;
+            // РЕСПАУН:
+            // 40 зданий * 50 длина = 2000 метров.
+            // Если ушло за камеру (>50), переносим в конец (-1950)
+            if (b.position.z > 50) {
+                b.position.z = -1950;
                 
-                // Перегенерация позиции как в твоем коде
-                const isRight = b.position.x > 0;
-                b.position.x = isRight ? (35 + Math.random()*20) : (-35 - Math.random()*20);
-                
-                // Для разнообразия высоты (скейл)
-                const newH = 30 + Math.random() * 90;
+                // Чуть меняем высоту, чтобы не было скучно
+                const newH = 50 + Math.random() * 100;
+                // Scale по Y меняет высоту без пересоздания геометрии
                 b.scale.y = newH / b.geometry.parameters.height;
                 b.position.y = newH / 2;
             }
