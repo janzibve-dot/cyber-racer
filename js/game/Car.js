@@ -5,29 +5,29 @@ import { CONFIG } from './Config.js';
 export class Car {
     constructor(scene) {
         this.scene = scene;
-        this.mesh = new THREE.Group(); // Основной контейнер
+        this.mesh = new THREE.Group(); 
         this.model = null;
         
+        // Физика и управление
         this.targetX = 0; 
-        this.sideSpeed = 45; 
+        this.sideSpeed = 35; // Чуть снизил скорость реакции клавиш
         this.isNitro = false;
         this.isBraking = false;
 
         this.loadModel();
         this.initControls();
         
-        // Позиция контейнера над дорогой
+        // Фиксированная позиция над дорогой
         this.mesh.position.set(0, 0.6, -5); 
         this.scene.add(this.mesh);
     }
 
     loadModel() {
         const loader = new GLTFLoader();
-        // Имя файла изменено на Car2.glb согласно твоей инструкции
         loader.load('assets/models/Car2.glb', (gltf) => {
             this.model = gltf.scene;
 
-            // Центрируем модель внутри контейнера
+            // Центрирование
             const box = new THREE.Box3().setFromObject(this.model);
             const center = box.getCenter(new THREE.Vector3());
             this.model.position.x += (this.model.position.x - center.x);
@@ -38,29 +38,26 @@ export class Car {
                 if (child.isMesh) {
                     child.castShadow = true;
                     if (child.material) {
-                        child.material.emissiveIntensity = 0.5;
-                        // Убедимся, что материалы видны при любом освещении
+                        child.material.emissiveIntensity = 0.4;
                         child.material.needsUpdate = true;
                     }
                 }
             });
 
-            // Корректируем размер под масштаб игры
-            this.model.scale.set(1.5, 1.5, 1.5); 
-            // Разворачиваем модель задом к камере (лицом к горизонту)
+            // УМЕНЬШЕНИЕ: масштаб изменен с 1.5 до 0.8
+            this.model.scale.set(0.8, 0.8, 0.8); 
             this.model.rotation.y = Math.PI; 
 
             this.mesh.add(this.model);
-            console.log("Модель Car2.glb успешно загружена");
+            console.log("Car2.glb: масштаб и плавность обновлены");
         }, undefined, (error) => {
-            console.warn("Файл Car2.glb не найден. Проверь путь assets/models/Car2.glb. Создаю заглушку.");
+            console.warn("Ошибка загрузки Car2.glb. Создаю заглушку.");
             this.createPlaceholder();
         });
     }
 
     createPlaceholder() {
-        // Если модель не загрузилась, рисуем неоновый каркас
-        const geo = new THREE.BoxGeometry(2, 0.8, 4);
+        const geo = new THREE.BoxGeometry(1.5, 0.6, 3);
         const mat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, wireframe: true });
         const box = new THREE.Mesh(geo, mat);
         this.mesh.add(box);
@@ -73,7 +70,8 @@ export class Car {
         
         window.addEventListener('mousemove', (e) => {
             const ratio = (e.clientX / window.innerWidth) * 2 - 1;
-            this.targetX = ratio * (CONFIG.road.width * 0.4); 
+            // ОГРАНИЧЕНИЕ: уменьшил множитель, чтобы мышь не уводила машину за экран
+            this.targetX = ratio * (CONFIG.road.width * 0.3); 
         });
     }
 
@@ -91,18 +89,18 @@ export class Car {
         this.isNitro = this.keys.up;
         this.isBraking = this.keys.down;
 
-        const roadLimit = (CONFIG.road.width / 2) - 2.5;
+        // ЛИМИТ: сузил границы, чтобы машина всегда была видна
+        const roadLimit = (CONFIG.road.width / 2) - 4;
         this.targetX = Math.max(-roadLimit, Math.min(roadLimit, this.targetX));
 
-        this.mesh.position.x += (this.targetX - this.mesh.position.x) * 0.15;
+        // ПЛАВНОСТЬ: коэффициент изменен с 0.15 на 0.08 (стала менее резкой)
+        this.mesh.position.x += (this.targetX - this.mesh.position.x) * 0.08;
         
-        // Легкое парение (hover)
-        const hover = Math.sin(Date.now() * 0.01) * 0.04;
+        const hover = Math.sin(Date.now() * 0.01) * 0.03;
         this.mesh.position.y = 0.6 + hover;
 
-        // Динамический наклон
-        const tiltZ = (this.mesh.position.x - this.targetX) * 0.3;
+        const tiltZ = (this.mesh.position.x - this.targetX) * 0.2;
         this.mesh.rotation.z += (tiltZ - this.mesh.rotation.z) * 0.1;
-        this.mesh.rotation.y = -(this.mesh.position.x - this.targetX) * 0.2;
+        this.mesh.rotation.y = -(this.mesh.position.x - this.targetX) * 0.1;
     }
 }
