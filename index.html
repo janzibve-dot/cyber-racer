@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/r17/Stats.min.js"></script>
     
     <script type="importmap">
         {
@@ -16,8 +17,23 @@
             }
         }
     </script>
+    <style>
+        /* Стиль экрана загрузки */
+        #loading-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 100;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: #00f3ff; font-family: 'Orbitron';
+        }
+        .loader-bar { width: 300px; height: 4px; background: #333; margin-top: 20px; }
+        .loader-progress { width: 0%; height: 100%; background: #00f3ff; transition: width 0.2s; box-shadow: 0 0 10px #00f3ff; }
+    </style>
 </head>
 <body>
+    <div id="loading-screen">
+        <h1>SYSTEM INITIALIZING...</h1>
+        <div class="loader-bar"><div class="loader-progress" id="progress-bar"></div></div>
+    </div>
 
     <div id="rain-container"></div>
     <div class="bg-overlay"></div>
@@ -32,54 +48,23 @@
             <div class="hud-label">SPD</div>
             <div id="speed-counter" class="hud-value">0</div>
         </div>
-        <div class="hud-box">
-            <div class="hud-label">MODE</div>
-            <div id="mode-display" class="hud-value">RACE</div>
-        </div>
     </div>
 
-    <div id="main-menu" class="mech-overlay">
-        <h1 class="game-title">CYBER RACER</h1>
-
-        <div class="mech-top-bar">
-            <div class="icon-box settings-icon"><i class="fas fa-cog"></i></div>
-            <div class="icon-box sound-icon" id="btn-mute"><i class="fas fa-volume-up"></i></div>
-            <div class="wire wire-left"></div><div class="wire wire-right"></div>
-        </div>
-
+    <div id="main-menu" class="mech-overlay hidden"> <h1 class="game-title">CYBER RACER</h1>
         <div class="mech-screen-frame">
             <div class="screen-inner scanlines">
                 <div class="controls-wrapper">
-                    <div class="control-group">
-                        <span class="key-bind">[W] NITRO [S] BRAKE</span>
-                        <span class="action-name">СКОРОСТЬ / ТОРМОЗ</span>
-                    </div>
+                    <div class="control-group"><span class="key-bind">[W] NITRO [S] BRAKE</span></div>
                     <div class="control-divider"></div>
-                    <div class="control-group">
-                        <span class="key-bind">[A D] / [MOUSE]</span>
-                        <span class="action-name">РУЛЕВОЕ УПРАВЛЕНИЕ</span>
-                    </div>
+                    <div class="control-group"><span class="key-bind">[MOUSE] STEER</span></div>
                 </div>
             </div>
-            <div class="bolt bolt-tl"></div><div class="bolt bolt-tr"></div>
-            <div class="bolt bolt-bl"></div><div class="bolt bolt-br"></div>
         </div>
-
         <div class="mech-bottom-panel">
-            <div class="circuit-bg"></div>
             <div class="mech-buttons-row">
-                <button id="btn-start" class="mech-btn unstable-neon">
-                    <span>БЕСКОНЕЧНЫЙ ЗАЕЗД</span>
-                </button>
-                <button id="btn-laps" class="mech-btn unstable-neon">
-                    <span>ГОНКА НА КРУГИ</span>
-                </button>
-                <button id="btn-lang" class="mech-btn unstable-neon">
-                    <span>ЯЗЫК: RU</span>
-                </button>
+                <button id="btn-start" class="mech-btn unstable-neon"><span>START ENGINE</span></button>
             </div>
         </div>
-        <div class="credits">GOLD VERSION 2.2</div>
     </div>
 
     <script type="module" src="js/ui.js"></script>
