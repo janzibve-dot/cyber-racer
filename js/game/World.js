@@ -7,7 +7,7 @@ import { CONFIG } from './Config.js';
 export class World {
     constructor(containerId, loadingManager) {
         this.container = document.getElementById(containerId);
-        this.loadingManager = loadingManager; // Сохраняем менеджер
+        this.loadingManager = loadingManager;
 
         this.uiDist = document.getElementById('dist-counter');
         this.uiSpeed = document.getElementById('speed-counter');
@@ -15,22 +15,28 @@ export class World {
         this.width = window.innerWidth;
         this.height = window.innerHeight;
         
-        this.isPaused = true; // Игра стоит на паузе при загрузке
-        this.gameStarted = false; // Флаг, что кнопка Start нажата
+        this.isPaused = true;
+        this.gameStarted = false;
 
-        this.currentSpeed = 0; // Скорость 0, пока в меню
+        this.currentSpeed = 0; 
         this.targetSpeed = CONFIG.speed.max;
         this.totalDistance = 0;
 
-        // FPS Stats
-        this.stats = new Stats();
-        this.stats.showPanel(0); // 0: fps
-        this.stats.dom.style.cssText = 'position:absolute;top:0px;left:0px;z-index:100;';
-        document.body.appendChild(this.stats.dom);
+        // ПРАВКА: Безопасное подключение FPS Stats
+        // Проверяем, загрузилась ли библиотека
+        if (typeof Stats !== 'undefined') {
+            this.stats = new Stats();
+            this.stats.showPanel(0); // 0: fps, 1: ms
+            this.stats.dom.style.cssText = 'position:absolute;top:0px;right:0px;z-index:100;';
+            document.body.appendChild(this.stats.dom);
+        } else {
+            console.warn('Stats.js not loaded via CDN');
+            this.stats = { begin: () => {}, end: () => {} }; // Заглушка
+        }
 
         this.initScene();
         this.city = new City(this.scene);
-        this.car = new Car(this.scene, this.loadingManager); // Передаем менеджер в машину
+        this.car = new Car(this.scene, this.loadingManager);
         this.obstacles = new Obstacles(this.scene); 
         
         this.clock = new THREE.Clock();
@@ -46,20 +52,19 @@ export class World {
         this.animate();
     }
 
-    // ИСПРАВЛЕНИЕ: Метод старта, который вызывает UI
     start() {
         console.log("Game World Started");
         this.gameStarted = true;
         this.isPaused = false;
         this.currentSpeed = CONFIG.speed.start;
         this.clock.start();
-        if (window.stopRain) window.stopRain(); // Останавливаем дождь из меню
+        if (window.stopRain) window.stopRain();
     }
 
     initScene() {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(CONFIG.colors.sky);
-        this.scene.fog = new THREE.Fog(CONFIG.colors.fog, 10, 120); // Плотный туман
+        this.scene.fog = new THREE.Fog(CONFIG.colors.fog, 10, 120);
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(this.width, this.height);
@@ -67,7 +72,7 @@ export class World {
 
         this.camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, this.width / this.height, 0.1, 1000);
         
-        // ПРАВКА: Камера (0, 2.0, 4.0) — Очень близко
+        // Камера настроена для агрессивной езды (низко и близко)
         this.camera.position.set(0, 2.0, 4.0);
 
         const ambient = new THREE.AmbientLight(0xffffff, 2.0);
@@ -95,37 +100,48 @@ export class World {
     animate() {
         requestAnimationFrame(() => this.animate());
         
-        this.stats.begin(); // Начало замера FPS
+        if (this.stats) this.stats.begin();
 
-        // Если игра на паузе или не начата — рендерим статичный кадр (фон меню)
+        // Меню (Игра на паузе, но мир живет)
         if (this.isPaused && !this.gameStarted) {
-            // Можно добавить медленное вращение камеры вокруг города для красоты в меню
-            if(this.city) this.city.update(10, 0.016); 
+            // Двигаем город медленно для фона
+            if(this.city) this.city.update(20, 0.016); 
+            // Вращаем препятствия для красоты, если они видны
+            if(this.obstacles) this.obstacles.update(20, 0.016);
+            
             this.renderer.render(this.scene, this.camera);
-            this.stats.end();
+            if (this.stats) this.stats.end();
             return;
         }
 
-        if (this.isPaused) { this.stats.end(); return; }
+        // Пауза (Escape)
+        if (this.isPaused) { 
+            if (this.stats) this.stats.end(); 
+            return; 
+        }
 
         const dt = this.clock.getDelta();
 
+        // Ускорение
         this.currentSpeed = this.lerp(this.currentSpeed, this.targetSpeed, dt * CONFIG.speed.acceleration);
 
+        // Обновление всех систем
         if (this.city) this.city.update(this.currentSpeed, dt);
         if (this.car) this.car.update(this.currentSpeed, dt);
-        if (this.obstacles) this.obstacles.update(this.currentSpeed, dt); 
+        if (this.obstacles) this.obstacles.update(this.currentSpeed, dt);
 
         this.updateHUD(dt); 
         
-        // Слежение камеры
+        // Камера следит за машиной
         const carX = this.car.mesh.position.x;
         const lookX = carX * 0.7; 
+        
+        // Плавное слежение по оси X
         this.camera.position.x += (carX * 0.6 - this.camera.position.x) * dt * 3;
         this.camera.lookAt(lookX, 1.5, -50);
 
         this.renderer.render(this.scene, this.camera);
         
-        this.stats.end(); // Конец замера FPS
+        if (this.stats) this.stats.end();
     }
 }
