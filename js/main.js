@@ -1,8 +1,5 @@
 import { World } from './game/World.js';
 
-console.log("Main Module Loaded");
-
-// Дождь в меню
 const RainSystem = {
     container: document.getElementById('rain-container'),
     init: function() {
@@ -25,19 +22,8 @@ const RainSystem = {
     }
 };
 
-class GameApp {
-    constructor() {
-        this.active = false;
-        this.world = null;
-    }
-
-    init() {
-        if (this.active) return;
-        this.active = true;
-        RainSystem.destroy();
-        this.world = new World('game-container');
-    }
-}
+// Делаем функцию остановки дождя доступной для других файлов
+window.stopRain = () => RainSystem.destroy();
 
 RainSystem.init();
-window.GameApp = new GameApp();
+console.log("Rain System Initialized");
