@@ -14,6 +14,10 @@ export class World {
         this.totalDistance = 0;
         this.laps = 0;
 
+        // Для эффекта Zoom при торможении
+        this.baseFov = CONFIG.camera.fov;
+        this.targetFov = this.baseFov;
+
         this.initScene();
         this.city = new City(this.scene);
         this.car = new Car(this.scene);
@@ -34,13 +38,11 @@ export class World {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.container.appendChild(this.renderer.domElement);
         
-        // Настройка камеры
         this.camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, window.innerWidth/window.innerHeight, 0.1, 2000);
         
-        // ПРАВКА: Приблизил камеру
-        // Было: (0, 5, 12)
-        // Стало: (0, 4, 9) -> Ближе по Z и чуть ниже по Y для агрессивного вида
-        this.camera.position.set(0, 4, 9);
+        // ПРАВКА: Камера еще ближе и ниже (было 0, 4, 9 -> стало 0, 3, 6.5)
+        // Это создает очень агрессивный вид "с хвоста"
+        this.camera.position.set(0, 3, 6.5);
         
         this.scene.add(new THREE.AmbientLight(0xffffff, 1.8));
     }
@@ -69,13 +71,20 @@ export class World {
         if (this.car.isBraking) targetSpeed *= 0.3;
 
         this.currentSpeed += (targetSpeed - this.currentSpeed) * dt * 2;
+        
+        // ПРАВКА: Логика динамического FOV (Зум при торможении)
+        // Если тормозим - FOV 60 (ближе), если едем - FOV 75 (стандарт)
+        const desiredFov = this.car.isBraking ? 55 : this.baseFov;
+        // Плавный переход FOV
+        this.camera.fov += (desiredFov - this.camera.fov) * dt * 5; 
+        this.camera.updateProjectionMatrix(); // Обязательно обновляем матрицу камеры
+
         this.city.update(this.currentSpeed, dt);
         this.car.update(this.currentSpeed, dt);
         this.obstacles.update(this.currentSpeed, dt);
         this.updateHUD(dt);
 
-        // Камера следит за машиной (с небольшим смещением)
-        this.camera.lookAt(this.car.mesh.position.x * 0.5, 2, -50);
+        this.camera.lookAt(this.car.mesh.position.x * 0.5, 1.5, -50);
         this.renderer.render(this.scene, this.camera);
     }
 }
