@@ -8,16 +8,14 @@ export class Car {
         this.mesh = new THREE.Group(); 
         this.model = null;
         
-        // Физика и управление
         this.targetX = 0; 
-        this.sideSpeed = 35; // Чуть снизил скорость реакции клавиш
+        this.sideSpeed = 35; 
         this.isNitro = false;
         this.isBraking = false;
 
         this.loadModel();
         this.initControls();
         
-        // Фиксированная позиция над дорогой
         this.mesh.position.set(0, 0.6, -5); 
         this.scene.add(this.mesh);
     }
@@ -27,7 +25,6 @@ export class Car {
         loader.load('assets/models/Car2.glb', (gltf) => {
             this.model = gltf.scene;
 
-            // Центрирование
             const box = new THREE.Box3().setFromObject(this.model);
             const center = box.getCenter(new THREE.Vector3());
             this.model.position.x += (this.model.position.x - center.x);
@@ -39,19 +36,17 @@ export class Car {
                     child.castShadow = true;
                     if (child.material) {
                         child.material.emissiveIntensity = 0.4;
-                        child.material.needsUpdate = true;
                     }
                 }
             });
 
-            // УМЕНЬШЕНИЕ: масштаб изменен с 1.5 до 0.8
-            this.model.scale.set(0.8, 0.8, 0.8); 
-            this.model.rotation.y = Math.PI; 
+            // МАСШТАБ: Увеличен до 1.1 для баланса
+            this.model.scale.set(1.1, 1.1, 1.1); 
+            // РАЗВОРОТ: Установлен на 0, чтобы ехала передом (если была задом, попробуй Math.PI)
+            this.model.rotation.y = 0; 
 
             this.mesh.add(this.model);
-            console.log("Car2.glb: масштаб и плавность обновлены");
         }, undefined, (error) => {
-            console.warn("Ошибка загрузки Car2.glb. Создаю заглушку.");
             this.createPlaceholder();
         });
     }
@@ -70,8 +65,7 @@ export class Car {
         
         window.addEventListener('mousemove', (e) => {
             const ratio = (e.clientX / window.innerWidth) * 2 - 1;
-            // ОГРАНИЧЕНИЕ: уменьшил множитель, чтобы мышь не уводила машину за экран
-            this.targetX = ratio * (CONFIG.road.width * 0.3); 
+            this.targetX = ratio * (CONFIG.road.width * 0.35); 
         });
     }
 
@@ -89,11 +83,9 @@ export class Car {
         this.isNitro = this.keys.up;
         this.isBraking = this.keys.down;
 
-        // ЛИМИТ: сузил границы, чтобы машина всегда была видна
-        const roadLimit = (CONFIG.road.width / 2) - 4;
+        const roadLimit = (CONFIG.road.width / 2) - 3.5;
         this.targetX = Math.max(-roadLimit, Math.min(roadLimit, this.targetX));
 
-        // ПЛАВНОСТЬ: коэффициент изменен с 0.15 на 0.08 (стала менее резкой)
         this.mesh.position.x += (this.targetX - this.mesh.position.x) * 0.08;
         
         const hover = Math.sin(Date.now() * 0.01) * 0.03;
