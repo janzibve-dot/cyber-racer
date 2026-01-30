@@ -22,16 +22,14 @@ export class World {
         this.obstacles = new Obstacles(this.scene);
         this.clock = new THREE.Clock();
 
-        this.mouseX = 0;
-        window.addEventListener('mousemove', (e) => {
-            this.mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-        });
-
-        // ПАУЗА НА ESCAPE
+        // Обработка кливиш (Пауза)
         window.addEventListener('keydown', (e) => {
-            if (e.code === 'Escape' && !document.getElementById('main-menu').classList.contains('hidden') === false) {
-                this.isPaused = !this.isPaused;
-                console.log("Pause:", this.isPaused);
+            if (e.code === 'Escape') {
+                const isMenuVisible = !document.getElementById('main-menu').classList.contains('hidden');
+                if (!isMenuVisible) {
+                    this.isPaused = !this.isPaused;
+                    console.log("Game Paused:", this.isPaused);
+                }
             }
         });
 
@@ -49,14 +47,13 @@ export class World {
         this.camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, window.innerWidth / window.innerHeight, 0.1, 2000);
         this.camera.position.set(0, 5, 12);
         
-        this.scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+        this.scene.add(new THREE.AmbientLight(0xffffff, 1.8));
     }
 
     start(mode) {
         this.gameMode = mode;
         this.isPaused = false;
         
-        // ОСТАНОВКА ДОЖДЯ (вызываем функцию из RainSystem в main.js через глобальный объект)
         if (window.stopRain) window.stopRain();
 
         this.totalDistance = 0;
@@ -69,6 +66,7 @@ export class World {
         const prevDist = this.totalDistance;
         this.totalDistance += (this.currentSpeed * dt) / 10;
         if (Math.floor(this.totalDistance / 1000) > Math.floor(prevDist / 1000)) this.laps++;
+        
         if (this.uiDist) this.uiDist.textContent = Math.floor(this.totalDistance).toString().padStart(4, '0');
         if (this.uiSpeed) this.uiSpeed.textContent = Math.floor(this.currentSpeed);
     }
