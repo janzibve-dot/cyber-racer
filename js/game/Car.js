@@ -15,9 +15,9 @@ export class Car {
         this.loadModel();
         this.initControls();
         
-        // ПРАВКА: Приблизил Z с -6 до -4.5 (еще ближе к экрану)
-        // ПРАВКА: Поднял Y с 0.6 до 0.8, так как машина стала больше
-        this.mesh.position.set(0, 0.8, -4.5); 
+        // ПРАВКА: Сдвинул назад (было -4.5, стало -5.5)
+        // Y оставил 0.8
+        this.mesh.position.set(0, 0.8, -5.5); 
         this.scene.add(this.mesh);
     }
 
@@ -30,8 +30,8 @@ export class Car {
             const center = box.getCenter(new THREE.Vector3());
             this.model.position.sub(center);
 
-            // ПРАВКА: Увеличил масштаб: 2.8 * 1.2 = 3.36
-            this.model.scale.set(3.36, 3.36, 3.36); 
+            // ПРАВКА: Увеличил масштаб (было 3.36, стало 3.8)
+            this.model.scale.set(3.8, 3.8, 3.8); 
             this.model.rotation.y = 0; 
 
             this.mesh.add(this.model);
@@ -68,18 +68,18 @@ export class Car {
         this.isNitro = this.keys.up;
         this.isBraking = this.keys.down;
 
-        const limit = (CONFIG.road.width / 2) - 4.5; // Чуть уменьшил лимит, т.к. машина шире
+        // Лимит перемещения (чуть уменьшил, т.к. машина стала шире)
+        const limit = (CONFIG.road.width / 2) - 5.0;
         this.targetX = Math.max(-limit, Math.min(limit, this.targetX));
         
-        this.mesh.position.x += (this.targetX - this.mesh.position.x) * 0.1;
+        // ПРАВКА: Плавность поворота
+        // Было 0.1, стало 0.05. Чем меньше число, тем плавнее и "тяжелее" машина движется к цели.
+        this.mesh.position.x += (this.targetX - this.mesh.position.x) * 0.05;
         
-        // Расчет наклона
         const tilt = (this.mesh.position.x - this.targetX) * 0.15;
         this.mesh.rotation.z = tilt;
 
-        // ПРАВКА: Логика "Анти-проваливания"
-        // Когда машина наклоняется (tilt), край опускается. Мы компенсируем это, поднимая Y.
-        // Math.abs(tilt) * 1.5 — коэффициент подъема при повороте.
+        // Компенсация высоты при наклоне
         const baseHeight = 0.8; 
         const bounce = Math.sin(Date.now() * 0.005) * 0.05;
         const cornerLift = Math.abs(tilt) * 1.5; 
