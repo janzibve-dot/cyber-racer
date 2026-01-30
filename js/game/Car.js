@@ -16,7 +16,8 @@ export class Car {
         this.loadModel();
         this.initControls();
         
-        this.mesh.position.set(0, 0.6, -5); 
+        // СДВИГ НАЗАД: Позиция Z изменена на -7.5 (было -5)
+        this.mesh.position.set(0, 0.6, -7.5); 
         this.scene.add(this.mesh);
     }
 
@@ -34,16 +35,14 @@ export class Car {
             this.model.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
-                    if (child.material) {
-                        child.material.emissiveIntensity = 0.4;
-                    }
+                    if (child.material) child.material.emissiveIntensity = 0.4;
                 }
             });
 
-            // МАСШТАБ: Увеличен до 1.1 для баланса
-            this.model.scale.set(1.1, 1.1, 1.1); 
-            // РАЗВОРОТ: Установлен на 0, чтобы ехала передом (если была задом, попробуй Math.PI)
-            this.model.rotation.y = 0; 
+            // УВЕЛИЧЕНИЕ: Масштаб теперь 1.3
+            this.model.scale.set(1.3, 1.3, 1.3); 
+            // РАЗВОРОТ: Если едет задом, используй Math.PI. Если передом - 0.
+            this.model.rotation.y = Math.PI; 
 
             this.mesh.add(this.model);
         }, undefined, (error) => {
@@ -52,17 +51,15 @@ export class Car {
     }
 
     createPlaceholder() {
-        const geo = new THREE.BoxGeometry(1.5, 0.6, 3);
+        const geo = new THREE.BoxGeometry(2, 0.8, 4);
         const mat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, wireframe: true });
-        const box = new THREE.Mesh(geo, mat);
-        this.mesh.add(box);
+        this.mesh.add(new THREE.Mesh(geo, mat));
     }
 
     initControls() {
         this.keys = { left: false, right: false, up: false, down: false };
         window.addEventListener('keydown', (e) => this.updateKeys(e.code, true));
         window.addEventListener('keyup', (e) => this.updateKeys(e.code, false));
-        
         window.addEventListener('mousemove', (e) => {
             const ratio = (e.clientX / window.innerWidth) * 2 - 1;
             this.targetX = ratio * (CONFIG.road.width * 0.35); 
@@ -79,20 +76,15 @@ export class Car {
     update(speed, dt) {
         if (this.keys.left) this.targetX -= this.sideSpeed * dt;
         if (this.keys.right) this.targetX += this.sideSpeed * dt;
-        
         this.isNitro = this.keys.up;
         this.isBraking = this.keys.down;
 
         const roadLimit = (CONFIG.road.width / 2) - 3.5;
         this.targetX = Math.max(-roadLimit, Math.min(roadLimit, this.targetX));
-
         this.mesh.position.x += (this.targetX - this.mesh.position.x) * 0.08;
-        
-        const hover = Math.sin(Date.now() * 0.01) * 0.03;
-        this.mesh.position.y = 0.6 + hover;
+        this.mesh.position.y = 0.6 + Math.sin(Date.now() * 0.01) * 0.03;
 
-        const tiltZ = (this.mesh.position.x - this.targetX) * 0.2;
-        this.mesh.rotation.z += (tiltZ - this.mesh.rotation.z) * 0.1;
+        this.mesh.rotation.z += ((this.mesh.position.x - this.targetX) * 0.2 - this.mesh.rotation.z) * 0.1;
         this.mesh.rotation.y = -(this.mesh.position.x - this.targetX) * 0.1;
     }
 }
