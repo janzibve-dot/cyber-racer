@@ -15,8 +15,9 @@ export class Car {
         this.loadModel();
         this.initControls();
         
-        // ПРАВКА: Изменил Z с -8 на -6 (ближе к экрану)
-        this.mesh.position.set(0, 0.6, -6); 
+        // ПРАВКА: Приблизил Z с -6 до -4.5 (еще ближе к экрану)
+        // ПРАВКА: Поднял Y с 0.6 до 0.8, так как машина стала больше
+        this.mesh.position.set(0, 0.8, -4.5); 
         this.scene.add(this.mesh);
     }
 
@@ -25,15 +26,12 @@ export class Car {
         loader.load('assets/models/Car2.glb', (gltf) => {
             this.model = gltf.scene;
             
-            // Центрирование модели внутри контейнера
             const box = new THREE.Box3().setFromObject(this.model);
             const center = box.getCenter(new THREE.Vector3());
             this.model.position.sub(center);
 
-            // ПРАВКА: Увеличил масштаб с 2.5 до 2.8
-            this.model.scale.set(2.8, 2.8, 2.8); 
-            
-            // ПРАВКА: Убрал разворот (было Math.PI), теперь 0 — машина смотрит вперед
+            // ПРАВКА: Увеличил масштаб: 2.8 * 1.2 = 3.36
+            this.model.scale.set(3.36, 3.36, 3.36); 
             this.model.rotation.y = 0; 
 
             this.mesh.add(this.model);
@@ -41,7 +39,6 @@ export class Car {
     }
 
     createPlaceholder() {
-        // Временный куб, если модель не загрузилась
         const geo = new THREE.BoxGeometry(2, 0.8, 4);
         const mat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, wireframe: true });
         this.mesh.add(new THREE.Mesh(geo, mat));
@@ -49,14 +46,10 @@ export class Car {
 
     initControls() {
         this.keys = { left: false, right: false, up: false, down: false };
-        
         window.addEventListener('keydown', (e) => this.updateKeys(e.code, true));
         window.addEventListener('keyup', (e) => this.updateKeys(e.code, false));
-        
-        // Управление мышью
         window.addEventListener('mousemove', (e) => {
             if (!this.model) return;
-            // Преобразуем координаты мыши в позицию на дороге
             this.targetX = ((e.clientX / window.innerWidth) * 2 - 1) * (CONFIG.road.width * 0.35);
         });
     }
@@ -69,24 +62,28 @@ export class Car {
     }
 
     update(speed, dt) {
-        // Логика перемещения
         if (this.keys.left) this.targetX -= this.sideSpeed * dt;
         if (this.keys.right) this.targetX += this.sideSpeed * dt;
         
         this.isNitro = this.keys.up;
         this.isBraking = this.keys.down;
 
-        // Ограничение движения границами дороги
-        const limit = (CONFIG.road.width / 2) - 3.5;
+        const limit = (CONFIG.road.width / 2) - 4.5; // Чуть уменьшил лимит, т.к. машина шире
         this.targetX = Math.max(-limit, Math.min(limit, this.targetX));
         
-        // Плавное смещение (интерполяция)
         this.mesh.position.x += (this.targetX - this.mesh.position.x) * 0.1;
         
-        // Легкое покачивание (имитация работы двигателя)
-        this.mesh.position.y = 0.6 + Math.sin(Date.now() * 0.005) * 0.05;
+        // Расчет наклона
+        const tilt = (this.mesh.position.x - this.targetX) * 0.15;
+        this.mesh.rotation.z = tilt;
+
+        // ПРАВКА: Логика "Анти-проваливания"
+        // Когда машина наклоняется (tilt), край опускается. Мы компенсируем это, поднимая Y.
+        // Math.abs(tilt) * 1.5 — коэффициент подъема при повороте.
+        const baseHeight = 0.8; 
+        const bounce = Math.sin(Date.now() * 0.005) * 0.05;
+        const cornerLift = Math.abs(tilt) * 1.5; 
         
-        // Наклон корпуса при повороте
-        this.mesh.rotation.z = (this.mesh.position.x - this.targetX) * 0.15;
+        this.mesh.position.y = baseHeight + bounce + cornerLift;
     }
 }
