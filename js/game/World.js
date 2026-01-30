@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { City } from './City.js';
 import { Car } from './Car.js';
-import { Obstacles } from './Obstacles.js'; // ПРАВКА: Импорт вернули
+import { Obstacles } from './Obstacles.js'; 
 import { CONFIG } from './Config.js';
 
 export class World {
@@ -20,7 +20,7 @@ export class World {
         this.initScene();
         this.city = new City(this.scene);
         this.car = new Car(this.scene);
-        this.obstacles = new Obstacles(this.scene); // ПРАВКА: Создаем препятствия
+        this.obstacles = new Obstacles(this.scene); 
         
         this.clock = new THREE.Clock();
 
@@ -45,8 +45,10 @@ export class World {
         this.container.appendChild(this.renderer.domElement);
 
         this.camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, this.width / this.height, 0.1, 1000);
-        // Камера ближе и ниже для маленькой машины
-        this.camera.position.set(0, 3, 6.5);
+        
+        // ПРАВКА: Камера еще ближе (было 0, 3, 6.5 -> стало 0, 2.5, 5.0)
+        // Это дает эффект "погони" прямо над крышей
+        this.camera.position.set(0, 2.5, 5.0);
 
         const ambient = new THREE.AmbientLight(0xffffff, 2.0);
         this.scene.add(ambient);
@@ -80,16 +82,13 @@ export class World {
 
         if (this.city) this.city.update(this.currentSpeed, dt);
         if (this.car) this.car.update(this.currentSpeed, dt);
-        if (this.obstacles) this.obstacles.update(this.currentSpeed, dt); // ПРАВКА: Обновляем препятствия
+        if (this.obstacles) this.obstacles.update(this.currentSpeed, dt); 
 
         this.updateHUD(dt); 
         
-        // ПРАВКА: Камера теперь следит за машиной по оси X
-        // Используем lerp для плавности
         const carX = this.car.mesh.position.x;
-        const lookX = carX * 0.8; // Камера смотрит чуть впереди машины
+        const lookX = carX * 0.8; 
         
-        // Смещаем саму камеру немного за машиной
         this.camera.position.x += (carX * 0.5 - this.camera.position.x) * dt * 2;
         this.camera.lookAt(lookX, 1.5, -50);
 
